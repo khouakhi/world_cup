@@ -31,12 +31,13 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
-  const auth = getFirebaseAuth();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setMessage("");
+
+    const auth = getFirebaseAuth();
 
     try {
       if (isSignUp) {
