@@ -1,0 +1,10 @@
+{
+  "name": "World Cup Predictions",
+  "short_name": "WC Predict",
+  "description": "Private World Cup 2026 prediction league",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#14532d",
+  "theme_color": "#14532d",
+  "icons": []
+}

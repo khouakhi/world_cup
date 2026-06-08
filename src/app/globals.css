@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pitch-50: #f0fdf4;
+  --color-pitch-100: #dcfce7;
+  --color-pitch-200: #bbf7d0;
+  --color-pitch-500: #22c55e;
+  --color-pitch-600: #16a34a;
+  --color-pitch-700: #15803d;
+  --color-pitch-800: #166534;
+  --color-pitch-900: #14532d;
+  --color-gold-400: #facc15;
+  --color-gold-500: #eab308;
+  --color-gold-600: #ca8a04;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: linear-gradient(160deg, #14532d 0%, #166534 40%, #0f172a 100%);
+  min-height: 100vh;
+  color: #f8fafc;
+}
+
+.card {
+  @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-xl;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-xl bg-gold-500 px-5 py-2.5 font-semibold text-pitch-900 transition hover:bg-gold-400 disabled:opacity-50;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 font-semibold transition hover:bg-white/20 disabled:opacity-50;
+}
+
+.input {
+  @apply w-full rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white placeholder:text-white/50 focus:border-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-400/30;
+}
+
+.badge-pill {
+  @apply inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-sm;
+}
+
+.live-pulse {
+  animation: pulse-live 2s ease-in-out infinite;
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.podium-1 { @apply bg-gradient-to-b from-gold-400 to-gold-600 text-pitch-900; }
+.podium-2 { @apply bg-gradient-to-b from-slate-300 to-slate-400 text-pitch-900; }
+.podium-3 { @apply bg-gradient-to-b from-amber-600 to-amber-700 text-white; }
