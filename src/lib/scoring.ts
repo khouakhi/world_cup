@@ -93,50 +93,10 @@ export function calculateBracketPoints(input: BracketScoreInput): number {
   return points;
 }
 
-export interface TopThreeScoreInput {
-  firstTeamId: number | null;
-  secondTeamId: number | null;
-  thirdTeamId: number | null;
-  actualFirstId: number | null;
-  actualSecondId: number | null;
-  actualThirdId: number | null;
-}
-
-export function calculateTopThreePoints(input: TopThreeScoreInput): number {
-  let points = 0;
-
-  if (
-    input.firstTeamId &&
-    input.actualFirstId &&
-    input.firstTeamId === input.actualFirstId
-  ) {
-    points += 25;
-  }
-
-  if (
-    input.secondTeamId &&
-    input.actualSecondId &&
-    input.secondTeamId === input.actualSecondId
-  ) {
-    points += 15;
-  }
-
-  if (
-    input.thirdTeamId &&
-    input.actualThirdId &&
-    input.thirdTeamId === input.actualThirdId
-  ) {
-    points += 10;
-  }
-
-  return points;
-}
-
 export function aggregateLeaderboard(
   members: { user_id: string; display_name: string }[],
   predictions: { user_id: string; points_awarded: number | null }[],
-  bracketPoints: Map<string, number>,
-  topThreePoints: Map<string, number> = new Map()
+  bracketPoints: Map<string, number>
 ) {
   const totals = new Map<
     string,
@@ -165,11 +125,8 @@ export function aggregateLeaderboard(
     display_name: data.display_name,
     match_points: data.matchPoints,
     bracket_points: bracketPoints.get(userId) ?? 0,
-    top_three_points: topThreePoints.get(userId) ?? 0,
     total_points:
-      data.matchPoints +
-      (bracketPoints.get(userId) ?? 0) +
-      (topThreePoints.get(userId) ?? 0),
+      data.matchPoints + (bracketPoints.get(userId) ?? 0),
     exact_scores: data.exactScores,
     rank: 0,
   }));

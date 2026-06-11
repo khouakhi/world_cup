@@ -4,13 +4,14 @@ import {
   aggregateLeaderboard,
   aggregateMatchdayLeaderboard,
 } from "@/lib/scoring";
+import { LEGACY_DEMO_MATCH_ID } from "@/lib/constants";
 import {
   getLeagueMembers,
   getPredictionsForLeague,
   getBracketPredictionsForLeague,
-  getTopThreePredictionsForLeague,
   listMatches,
 } from "@/lib/db";
+import { purgeLegacyDemoData, syncBadgesForLeague } from "@/lib/sync/badges";
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
@@ -30,25 +31,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ leaderboard: [], matchday_leaderboard: [] });
   }
 
-  const predictions = await getPredictionsForLeague(leagueId);
+  await purgeLegacyDemoData();
+  await syncBadgesForLeague(leagueId);
+
+  const predictions = (await getPredictionsForLeague(leagueId)).filter(
+    (p) => p.match_id !== LEGACY_DEMO_MATCH_ID
+  );
   const brackets = await getBracketPredictionsForLeague(leagueId);
-  const topThree = await getTopThreePredictionsForLeague(leagueId);
 
   const bracketMap = new Map<string, number>();
   for (const b of brackets) {
     bracketMap.set(b.user_id, b.points_awarded ?? 0);
   }
 
-  const topThreeMap = new Map<string, number>();
-  for (const t of topThree) {
-    topThreeMap.set(t.user_id, t.points_awarded ?? 0);
-  }
-
   const leaderboard = aggregateLeaderboard(
     members,
     predictions,
-    bracketMap,
-    topThreeMap
+    bracketMap
   );
 
   let matchdayLeaderboard = null;
@@ -66,6 +65,5 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     leaderboard,
     matchday_leaderboard: matchdayLeaderboard,
-    top_three: leaderboard.slice(0, 3),
   });
 }

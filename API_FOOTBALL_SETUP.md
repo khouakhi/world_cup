@@ -5,6 +5,10 @@ Your app uses **API-Football** to automatically fetch World Cup 2026 fixtures, t
 **Website:** [https://www.api-football.com](https://www.api-football.com)  
 **Free tier:** 100 requests per day — enough for a family league (~30 users).
 
+> **Important:** The free plan only includes API seasons **2022–2024**, not 2026.  
+> Add `API_FOOTBALL_SEASON=2022` to `.env.local` so bracket teams and fixture sync work.  
+> Switch to `2026` when you upgrade your API plan for the real tournament.
+
 ---
 
 ## Step 1 — Create a free account
@@ -37,9 +41,12 @@ Open `.env.local` in your project folder and set:
 
 ```
 API_FOOTBALL_KEY=paste-your-key-here
+API_FOOTBALL_SEASON=2022
 ```
 
 Save the file, then restart the app (`Ctrl+C`, then `npm run dev`).
+
+**Why season 2022?** The free API plan cannot access 2026 yet. Season `2022` loads World Cup teams (with flags) and historical fixtures so you can test the app. Your app UI still targets World Cup 2026.
 
 ### On Vercel (when live)
 
@@ -74,7 +81,7 @@ This downloads all World Cup 2026 matches into your database. After that, they a
 | **Standings** | Group tables (future use) |
 | **Head-to-head** | Match previews (optional) |
 
-World Cup 2026 uses **league ID 1**, **season 2026** in the API.
+World Cup uses **league ID 1** in the API. The **season** comes from `API_FOOTBALL_SEASON` (default `2022` on free tier, use `2026` when your plan allows it).
 
 ---
 
@@ -98,6 +105,7 @@ For live updates during match days, use [cron-job.org](https://cron-job.org) (fr
 
 | Problem | Fix |
 |---------|-----|
+| `Free plans do not have access to this season` | Add `API_FOOTBALL_SEASON=2022` to `.env.local` and restart |
 | No matches in app | Add `API_FOOTBALL_KEY` and run the sync command |
 | `API_FOOTBALL_KEY is not configured` | Key missing from `.env.local` or Vercel env vars |
 | `403` or `401` from API | Wrong key, or free tier expired — log in to dashboard |

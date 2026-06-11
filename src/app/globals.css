@@ -54,3 +54,39 @@ body {
 .podium-1 { @apply bg-gradient-to-b from-gold-400 to-gold-600 text-pitch-900; }
 .podium-2 { @apply bg-gradient-to-b from-slate-300 to-slate-400 text-pitch-900; }
 .podium-3 { @apply bg-gradient-to-b from-amber-600 to-amber-700 text-white; }
+
+.hero-pitch-lines {
+  background-image:
+    linear-gradient(to bottom, transparent 49.5%, rgba(255, 255, 255, 0.35) 49.5%, rgba(255, 255, 255, 0.35) 50.5%, transparent 50.5%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 79px,
+      rgba(255, 255, 255, 0.04) 79px,
+      rgba(255, 255, 255, 0.04) 80px
+    );
+}
+
+.hero-glow {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 40%,
+    rgba(250, 204, 21, 0.15) 0%,
+    transparent 70%
+  );
+}
+
+.football-float {
+  animation: football-float 6s ease-in-out infinite;
+}
+
+@keyframes football-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(8deg); }
+}
+
+.scoreboard-glow {
+  box-shadow:
+    0 0 0 1px rgba(250, 204, 21, 0.3),
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}

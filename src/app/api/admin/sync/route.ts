@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { syncFixtures, syncLiveResults } from "@/lib/sync/fixtures";
 import { generateUpcomingPreviews } from "@/lib/sync/previews";
+import { seedWorldCup2026Fixtures } from "@/lib/worldcup2026/seed";
 
 /**
  * Manual sync endpoint for local development.
@@ -15,12 +16,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const seed = await seedWorldCup2026Fixtures();
     const fixtures = await syncFixtures();
     const live = await syncLiveResults();
     const previews = await generateUpcomingPreviews();
 
     return NextResponse.json({
       ok: true,
+      seed,
       fixtures,
       live,
       previews,

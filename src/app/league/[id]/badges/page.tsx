@@ -62,7 +62,7 @@ export default function BadgesPage() {
               <div key={key} className="flex items-center gap-2 text-sm text-white/70">
                 <span>{info.emoji}</span>
                 <span className="font-medium text-white">{info.title}</span>
-                <span className="text-white/50">— {info.description}</span>
+                <span className="text-white/50">· {info.description}</span>
               </div>
             ))}
           </div>

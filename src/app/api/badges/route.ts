@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserFromRequest } from "@/lib/firebase/auth";
 import { getBadgesForLeague, getLeagueMembers } from "@/lib/db";
+import { purgeLegacyDemoData, syncBadgesForLeague } from "@/lib/sync/badges";
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
@@ -12,6 +13,9 @@ export async function GET(request: NextRequest) {
   if (!leagueId) {
     return NextResponse.json({ error: "league_id required" }, { status: 400 });
   }
+
+  await purgeLegacyDemoData();
+  await syncBadgesForLeague(leagueId);
 
   const badges = await getBadgesForLeague(leagueId);
   const members = await getLeagueMembers(leagueId);

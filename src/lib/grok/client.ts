@@ -12,7 +12,7 @@ interface GrokMessage {
 
 /**
  * Generate a short, family-friendly match preview using Grok.
- * Results are cached in the database — this is only called once per match.
+ * Results are cached in the database. This is only called once per match.
  */
 export async function generateMatchPreview(
   homeTeam: string,
@@ -81,7 +81,7 @@ export async function generateMatchPreview(
 }
 
 /**
- * Fallback preview when Grok is unavailable — uses API-Football data only.
+ * Fallback preview when Grok is unavailable. Uses API-Football data only.
  */
 export function buildFallbackPreview(
   homeTeam: string,
@@ -93,7 +93,7 @@ export function buildFallbackPreview(
     preview_text:
       `${homeTeam} host ${awayTeam} in this ${stage ?? "World Cup 2026"} clash` +
       (venue ? ` at ${venue}` : "") +
-      ". Get your scoreline in before kick-off — captain's pick counts double!",
+      ". Get your scoreline in before kick-off. Captain's pick counts double!",
     fun_fact:
       "The 2026 World Cup is the first edition with 48 teams, hosted across " +
       "USA, Mexico, and Canada.",

@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "World Cup Predictions",
   description:
-    "Private prediction league for family and friends — score predictions, captain's picks, and bracket challenge for FIFA World Cup 2026.",
+    "Private prediction league for family and friends: score predictions, captain's picks, and bracket challenge for FIFA World Cup 2026.",
   manifest: "/manifest.json",
 };
 

@@ -6,7 +6,6 @@ import { Nav } from "@/components/Nav";
 import { Podium, LeaderboardTable } from "@/components/Leaderboard";
 import { MobileNav } from "@/components/MobileNav";
 import type { League, LeaderboardEntry } from "@/types";
-import { TOP_THREE_POINTS } from "@/types";
 
 export default function LeaderboardPage() {
   const params = useParams();
@@ -51,18 +50,6 @@ export default function LeaderboardPage() {
         </div>
 
         <LeaderboardTable entries={entries} highlightUserId={userId ?? undefined} />
-
-        <div className="card mt-6 p-4 text-sm text-white/60">
-          <h3 className="mb-2 font-semibold text-white">Scoring</h3>
-          <ul className="space-y-1">
-            <li>Correct result: 1 pt</li>
-            <li>Correct goal difference: 2 pts</li>
-            <li>Exact score: 5 pts</li>
-            <li>Captain&apos;s pick: 2× multiplier</li>
-            <li>Top 3 podium: 1st {TOP_THREE_POINTS.first} · 2nd {TOP_THREE_POINTS.second} · 3rd {TOP_THREE_POINTS.third} pts</li>
-            <li>Bracket: champion 20 · runner-up 10 · semi-finalist 5 each</li>
-          </ul>
-        </div>
       </main>
       <MobileNav leagueId={leagueId} />
     </div>

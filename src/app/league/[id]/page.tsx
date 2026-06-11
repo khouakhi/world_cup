@@ -4,17 +4,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { MatchCard } from "@/components/MatchCard";
-import { Podium } from "@/components/Leaderboard";
 import { formatMatchday } from "@/lib/utils";
 import type {
   Match,
   Prediction,
   League,
-  LeaderboardEntry,
   MatchdayLeaderboardEntry,
 } from "@/types";
 import { ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { MobileNav } from "@/components/MobileNav";
+import { ScoringHelpBox } from "@/components/ScoringHelpBox";
 
 type MatchWithPreview = Match & {
   preview?: { preview_text: string; fun_fact: string | null } | null;
@@ -31,7 +30,6 @@ export default function LeaguePage() {
   const [selectedDay, setSelectedDay] = useState<string>("");
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [captainMatchId, setCaptainMatchId] = useState<string | null>(null);
-  const [topThree, setTopThree] = useState<LeaderboardEntry[]>([]);
   const [matchdayWinner, setMatchdayWinner] = useState<MatchdayLeaderboardEntry | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -76,8 +74,8 @@ export default function LeaguePage() {
       `/api/leaderboard?league_id=${leagueId}${day ? `&matchday=${day}` : ""}`
     );
     const lbData = await lbRes.json();
-    setTopThree(lbData.top_three ?? []);
-    setMatchdayWinner(lbData.matchday_leaderboard?.[0] ?? null);
+    const winner = lbData.matchday_leaderboard?.[0] ?? null;
+    setMatchdayWinner(winner && winner.points > 0 ? winner : null);
   }, [leagueId, selectedDay, router]);
 
   useEffect(() => {
@@ -144,14 +142,10 @@ export default function LeaguePage() {
           <div className="card mb-6 p-4 text-center">
             <span className="text-sm text-white/60">Matchday winner</span>
             <div className="text-lg font-bold text-gold-400">
-              🥇 {matchdayWinner.display_name} — {matchdayWinner.points} pts
+              🥇 {matchdayWinner.display_name}: {matchdayWinner.points} pts
             </div>
           </div>
         )}
-
-        <div className="mb-6">
-          <Podium entries={topThree} />
-        </div>
 
         {matchdays.length > 0 && (
           <div className="mb-6 flex items-center justify-between">
@@ -178,10 +172,12 @@ export default function LeaguePage() {
           </div>
         )}
 
+        <ScoringHelpBox />
+
         <div className="space-y-4">
           {matches.length === 0 ? (
             <div className="card p-8 text-center text-white/60">
-              No matches for this day yet. Fixtures sync automatically once the
+              No matches for this day yet. Fixtures will appear here once the
               tournament schedule is available.
             </div>
           ) : (

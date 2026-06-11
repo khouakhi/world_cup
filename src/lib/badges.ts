@@ -83,7 +83,7 @@ export function evaluateBadges(
     }
   }
 
-  // Group Stage Guru & Knockout King — top scorer per stage
+  // Group Stage Guru & Knockout King: top scorer per stage
   const groupStagePoints = scoreByStage(predictions, matches, "Group");
   const knockoutPoints = scoreByStage(predictions, matches, "Knockout");
 

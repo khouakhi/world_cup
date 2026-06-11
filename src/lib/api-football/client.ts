@@ -1,8 +1,8 @@
 import {
-  WORLD_CUP_LEAGUE_ID,
-  WORLD_CUP_SEASON,
-  type MatchStatus,
-} from "@/types";
+  API_FOOTBALL_LEAGUE_ID,
+  getApiFootballSeason,
+} from "@/lib/api-football/config";
+import type { MatchStatus } from "@/types";
 import { mapApiStatus } from "@/lib/scoring";
 
 const BASE_URL = "https://v3.football.api-sports.io";
@@ -78,7 +78,13 @@ async function apiFetch<T>(path: string): Promise<T> {
 
   const json = await res.json();
   if (json.errors && Object.keys(json.errors).length > 0) {
-    throw new Error(`API-Football errors: ${JSON.stringify(json.errors)}`);
+    const errStr = JSON.stringify(json.errors);
+    if (errStr.toLowerCase().includes("free plans do not have access to this season")) {
+      throw new Error(
+        "API-Football free plan does not include season 2026. Add API_FOOTBALL_SEASON=2022 to .env.local (free tier allows 2022–2024). Use 2026 when you upgrade for the real tournament."
+      );
+    }
+    throw new Error(`API-Football errors: ${errStr}`);
   }
 
   return json.response as T;
@@ -129,15 +135,17 @@ function normaliseFixture(raw: ApiFootballFixture): NormalisedFixture {
 }
 
 export async function fetchWorldCupFixtures(): Promise<NormalisedFixture[]> {
+  const season = getApiFootballSeason();
   const fixtures = await apiFetch<ApiFootballFixture[]>(
-    `/fixtures?league=${WORLD_CUP_LEAGUE_ID}&season=${WORLD_CUP_SEASON}`
+    `/fixtures?league=${API_FOOTBALL_LEAGUE_ID}&season=${season}`
   );
   return fixtures.map(normaliseFixture);
 }
 
 export async function fetchLiveWorldCupFixtures(): Promise<NormalisedFixture[]> {
+  const season = getApiFootballSeason();
   const fixtures = await apiFetch<ApiFootballFixture[]>(
-    `/fixtures?live=all&league=${WORLD_CUP_LEAGUE_ID}&season=${WORLD_CUP_SEASON}`
+    `/fixtures?live=all&league=${API_FOOTBALL_LEAGUE_ID}&season=${season}`
   );
   return fixtures.map(normaliseFixture);
 }
@@ -168,6 +176,7 @@ export interface TeamStanding {
 }
 
 export async function fetchWorldCupStandings(): Promise<TeamStanding[]> {
+  const season = getApiFootballSeason();
   const data = await apiFetch<
     {
       group: string;
@@ -178,7 +187,7 @@ export async function fetchWorldCupStandings(): Promise<TeamStanding[]> {
         points: number;
       }>> };
     }[]
-  >(`/standings?league=${WORLD_CUP_LEAGUE_ID}&season=${WORLD_CUP_SEASON}`);
+  >(`/standings?league=${API_FOOTBALL_LEAGUE_ID}&season=${season}`);
 
   const standings: TeamStanding[] = [];
 
@@ -247,8 +256,9 @@ export async function fetchHeadToHead(
 export async function fetchWorldCupTeams(): Promise<
   { id: number; name: string; logo: string | null }[]
 > {
+  const season = getApiFootballSeason();
   const teams = await apiFetch<{ team: ApiFootballTeam }[]>(
-    `/teams?league=${WORLD_CUP_LEAGUE_ID}&season=${WORLD_CUP_SEASON}`
+    `/teams?league=${API_FOOTBALL_LEAGUE_ID}&season=${season}`
   );
   return teams.map((t) => ({
     id: t.team.id,

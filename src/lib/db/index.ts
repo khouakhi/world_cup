@@ -7,9 +7,9 @@ import type {
   Match,
   Prediction,
   Profile,
-  TopThreePrediction,
 } from "@/types";
 import { generateInviteCode } from "@/lib/utils";
+import { LEGACY_DEMO_MATCH_ID } from "@/lib/constants";
 
 const db = () => getAdminDb();
 
@@ -169,6 +169,68 @@ export async function getMatchByExternalId(
   return getMatch(matchDocId(externalFixtureId));
 }
 
+export async function getMatchByApiFootballId(
+  apiFixtureId: number
+): Promise<Match | null> {
+  const snap = await db()
+    .collection("matches")
+    .where("api_football_fixture_id", "==", apiFixtureId)
+    .limit(1)
+    .get();
+
+  if (snap.empty) return null;
+  const doc = snap.docs[0];
+  return { id: doc.id, ...doc.data() } as Match;
+}
+
+export async function findMatchByTeamsAndDate(
+  homeTeamId: number,
+  awayTeamId: number,
+  kickoffDate: string
+): Promise<Match | null> {
+  const snap = await db().collection("matches").get();
+  const match = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as Match)
+    .find(
+      (m) =>
+        m.home_team_id === homeTeamId &&
+        m.away_team_id === awayTeamId &&
+        m.matchday === kickoffDate
+    );
+  return match ?? null;
+}
+
+export async function updateMatchLiveData(
+  matchId: string,
+  data: Partial<
+    Pick<
+      Match,
+      | "status"
+      | "home_score"
+      | "away_score"
+      | "home_score_halftime"
+      | "away_score_halftime"
+      | "is_locked"
+      | "kickoff_at"
+      | "home_team_id"
+      | "home_team_name"
+      | "home_team_logo"
+      | "away_team_id"
+      | "away_team_name"
+      | "away_team_logo"
+      | "api_football_fixture_id"
+    >
+  >
+): Promise<void> {
+  await db()
+    .collection("matches")
+    .doc(matchId)
+    .set(
+      { ...data, synced_at: new Date().toISOString() },
+      { merge: true }
+    );
+}
+
 export async function upsertMatch(
   externalFixtureId: number,
   data: Omit<Match, "id">
@@ -202,7 +264,9 @@ export async function listMatches(filters?: {
   matches.sort(
     (a, b) => new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime()
   );
-  return matches;
+
+  // Exclude legacy demo fixtures if any remain in the database
+  return matches.filter((m) => m.id !== LEGACY_DEMO_MATCH_ID);
 }
 
 export async function listMatchdays(): Promise<string[]> {
@@ -284,6 +348,24 @@ export async function updatePredictionPoints(
   });
 }
 
+export async function deletePredictionsForMatch(matchId: string): Promise<void> {
+  const snap = await db()
+    .collection("predictions")
+    .where("match_id", "==", matchId)
+    .get();
+  const batch = db().batch();
+  for (const doc of snap.docs) {
+    batch.delete(doc.ref);
+  }
+  if (!snap.empty) {
+    await batch.commit();
+  }
+}
+
+export async function deleteMatch(matchId: string): Promise<void> {
+  await db().collection("matches").doc(matchId).delete();
+}
+
 // ─── Captain picks ────────────────────────────────────────────────────────────
 
 export async function upsertCaptainPick(
@@ -324,6 +406,20 @@ export async function getCaptainPicksForLeague(
     .where("league_id", "==", leagueId)
     .get();
   return snap.docs.map((d) => d.data() as CaptainPick);
+}
+
+export async function deleteCaptainPicksForMatch(matchId: string): Promise<void> {
+  const snap = await db()
+    .collection("captainPicks")
+    .where("match_id", "==", matchId)
+    .get();
+  const batch = db().batch();
+  for (const doc of snap.docs) {
+    batch.delete(doc.ref);
+  }
+  if (!snap.empty) {
+    await batch.commit();
+  }
 }
 
 // ─── Bracket ──────────────────────────────────────────────────────────────────
@@ -401,108 +497,6 @@ export async function countStartedMatches(): Promise<number> {
   }).length;
 }
 
-// ─── Top 3 podium predictions ─────────────────────────────────────────────────
-
-export async function upsertTopThreePrediction(
-  leagueId: string,
-  userId: string,
-  data: Partial<TopThreePrediction>
-): Promise<TopThreePrediction> {
-  const id = `${leagueId}_${userId}`;
-  const ref = db().collection("topThreePredictions").doc(id);
-  const existing = await ref.get();
-
-  const prediction: TopThreePrediction = {
-    id,
-    league_id: leagueId,
-    user_id: userId,
-    first_team_id: data.first_team_id ?? null,
-    first_team_name: data.first_team_name ?? null,
-    second_team_id: data.second_team_id ?? null,
-    second_team_name: data.second_team_name ?? null,
-    third_team_id: data.third_team_id ?? null,
-    third_team_name: data.third_team_name ?? null,
-    points_awarded: existing.data()?.points_awarded ?? 0,
-    is_locked: existing.data()?.is_locked ?? false,
-    submitted_at: new Date().toISOString(),
-  };
-
-  await ref.set(prediction, { merge: true });
-  return prediction;
-}
-
-export async function getTopThreePrediction(
-  leagueId: string,
-  userId: string
-): Promise<TopThreePrediction | null> {
-  const doc = await db()
-    .collection("topThreePredictions")
-    .doc(`${leagueId}_${userId}`)
-    .get();
-  if (!doc.exists) return null;
-  return { id: doc.id, ...doc.data() } as TopThreePrediction;
-}
-
-export async function getTopThreePredictionsForLeague(
-  leagueId: string
-): Promise<TopThreePrediction[]> {
-  const snap = await db()
-    .collection("topThreePredictions")
-    .where("league_id", "==", leagueId)
-    .get();
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as TopThreePrediction);
-}
-
-export async function getAllTopThreePredictions(): Promise<TopThreePrediction[]> {
-  const snap = await db().collection("topThreePredictions").get();
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as TopThreePrediction);
-}
-
-export async function updateTopThreePoints(
-  predictionId: string,
-  points: number,
-  lock = false
-): Promise<void> {
-  const update: Record<string, unknown> = { points_awarded: points };
-  if (lock) update.is_locked = true;
-  await db().collection("topThreePredictions").doc(predictionId).update(update);
-}
-
-export async function getTournamentPodiumTeams(): Promise<{
-  firstId: number | null;
-  secondId: number | null;
-  thirdId: number | null;
-}> {
-  const matches = await listAllMatches();
-  const finished = ["FT", "AET", "PEN"];
-
-  let firstId: number | null = null;
-  let secondId: number | null = null;
-  let thirdId: number | null = null;
-
-  for (const m of matches) {
-    if (!finished.includes(m.status) || m.home_score === null || m.away_score === null) {
-      continue;
-    }
-    const round = (m.round ?? "").toLowerCase();
-    const winner =
-      m.home_score > m.away_score ? m.home_team_id : m.away_team_id;
-    const loser =
-      m.home_score > m.away_score ? m.away_team_id : m.home_team_id;
-
-    if (round.includes("final") && !round.includes("semi") && !round.includes("3rd")) {
-      firstId = winner;
-      secondId = loser;
-    }
-
-    if (round.includes("3rd") || round.includes("third")) {
-      thirdId = winner;
-    }
-  }
-
-  return { firstId, secondId, thirdId };
-}
-
 // ─── Badges ───────────────────────────────────────────────────────────────────
 
 export async function upsertBadge(
@@ -530,6 +524,10 @@ export async function getBadgesForLeague(leagueId: string): Promise<Badge[]> {
     .where("league_id", "==", leagueId)
     .get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Badge);
+}
+
+export async function deleteBadge(badgeId: string): Promise<void> {
+  await db().collection("badges").doc(badgeId).delete();
 }
 
 // ─── Match previews ───────────────────────────────────────────────────────────

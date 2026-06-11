@@ -11,7 +11,7 @@ export function Podium({ entries }: PodiumProps) {
   if (!first) {
     return (
       <div className="card p-8 text-center text-white/60">
-        No scores yet — start predicting!
+        No scores yet. Start predicting!
       </div>
     );
   }
@@ -19,7 +19,7 @@ export function Podium({ entries }: PodiumProps) {
   return (
     <div className="card p-6">
       <h2 className="mb-6 text-center text-lg font-semibold text-gold-400">
-        🏆 Top 3
+        🏆 Leaders
       </h2>
       <div className="flex items-end justify-center gap-3">
         {second && (
@@ -78,7 +78,6 @@ export function LeaderboardTable({ entries, highlightUserId }: LeaderboardTableP
             <th className="px-4 py-3">Player</th>
             <th className="px-4 py-3 text-right">Match</th>
             <th className="px-4 py-3 text-right hidden sm:table-cell">Bracket</th>
-            <th className="px-4 py-3 text-right hidden sm:table-cell">Top 3</th>
             <th className="px-4 py-3 text-right">Total</th>
           </tr>
         </thead>
@@ -94,7 +93,6 @@ export function LeaderboardTable({ entries, highlightUserId }: LeaderboardTableP
               <td className="px-4 py-3">{entry.display_name}</td>
               <td className="px-4 py-3 text-right">{entry.match_points}</td>
               <td className="px-4 py-3 text-right hidden sm:table-cell">{entry.bracket_points}</td>
-              <td className="px-4 py-3 text-right hidden sm:table-cell">{entry.top_three_points}</td>
               <td className="px-4 py-3 text-right font-bold text-gold-400">
                 {entry.total_points}
               </td>

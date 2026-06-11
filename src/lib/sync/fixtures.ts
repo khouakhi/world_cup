@@ -4,92 +4,169 @@ import {
   type NormalisedFixture,
 } from "@/lib/api-football/client";
 import { calculateMatchPoints } from "@/lib/scoring";
-import { evaluateBadges } from "@/lib/badges";
 import { isFinishedStatus } from "@/lib/utils";
 import { scoreBracketPredictions } from "@/lib/sync/bracket";
-import { scoreTopThreePredictions } from "@/lib/sync/top-three";
+import { syncBadgesForLeague } from "@/lib/sync/badges";
+import { ensureWorldCup2026Seeded } from "@/lib/worldcup2026/seed";
 import {
-  getMatchByExternalId,
-  upsertMatch,
-  matchDocId,
+  buildTeamNameIndex,
+  resolveWc26TeamId,
+} from "@/lib/worldcup2026/normalise";
+import {
+  getMatch,
+  getMatchByApiFootballId,
+  findMatchByTeamsAndDate,
+  updateMatchLiveData,
   getPredictionsForMatch,
   getCaptainPick,
   updatePredictionPoints,
-  getLeagueMembers,
-  getPredictionsForLeague,
-  listAllMatches,
-  getCaptainPicksForLeague,
-  upsertBadge,
   listSemiFinalMatches,
-  getMatch,
 } from "@/lib/db";
 import type { Match } from "@/types";
 
-export async function syncFixtures(): Promise<{ synced: number; updated: number }> {
-  const fixtures = await fetchWorldCupFixtures();
+/**
+ * Sync live scores from API-Football into seeded World Cup 2026 fixtures.
+ * Static schedule comes from worldcup2026 JSON; this only updates results.
+ */
+export async function syncFixtures(): Promise<{
+  synced: number;
+  updated: number;
+  unmatched: number;
+}> {
+  await ensureWorldCup2026Seeded();
 
-  let synced = 0;
+  let fixtures: NormalisedFixture[] = [];
+  try {
+    fixtures = await fetchWorldCupFixtures();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      message.includes("free plan") ||
+      message.includes("season") ||
+      message.includes("API_FOOTBALL_KEY")
+    ) {
+      return { synced: 0, updated: 0, unmatched: 0 };
+    }
+    throw error;
+  }
+
+  const nameIndex = buildTeamNameIndex();
   let updated = 0;
+  let unmatched = 0;
 
   for (const fixture of fixtures) {
-    const existing = await getMatchByExternalId(fixture.external_fixture_id);
-    const row = fixtureToRow(fixture);
-
-    if (existing) {
-      await upsertMatch(fixture.external_fixture_id, row);
-      updated += 1;
-
-      const wasFinished = isFinishedStatus(existing.status);
-      const nowFinished = isFinishedStatus(fixture.status);
-
-      if (
-        !wasFinished &&
-        nowFinished &&
-        fixture.home_score !== null &&
-        fixture.away_score !== null
-      ) {
-        await scoreMatchPredictions(existing.id, fixture.home_score, fixture.away_score);
-
-        const round = fixture.round?.toLowerCase() ?? "";
-        if (round.includes("final") && !round.includes("semi") && !round.includes("3rd")) {
-          await scoreBracketsFromFinal(fixture);
-        }
-        if (round.includes("final") || round.includes("3rd") || round.includes("third")) {
-          await scoreTopThreePredictions();
-        }
-      }
-    } else {
-      await upsertMatch(fixture.external_fixture_id, row);
-      synced += 1;
-    }
+    const result = await applyApiFootballUpdate(fixture, nameIndex);
+    if (result === "updated") updated += 1;
+    else if (result === "unmatched") unmatched += 1;
   }
 
-  return { synced, updated };
+  return { synced: 0, updated, unmatched };
 }
 
-export async function syncLiveResults(): Promise<{ live: number }> {
-  const liveFixtures = await fetchLiveWorldCupFixtures();
+export async function syncLiveResults(): Promise<{ live: number; updated: number }> {
+  await ensureWorldCup2026Seeded();
+
+  let liveFixtures: NormalisedFixture[] = [];
+  try {
+    liveFixtures = await fetchLiveWorldCupFixtures();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (
+      message.includes("free plan") ||
+      message.includes("season") ||
+      message.includes("API_FOOTBALL_KEY")
+    ) {
+      return { live: 0, updated: 0 };
+    }
+    throw error;
+  }
+
+  const nameIndex = buildTeamNameIndex();
+  let updated = 0;
 
   for (const fixture of liveFixtures) {
-    const existing = await getMatchByExternalId(fixture.external_fixture_id);
-    if (!existing) continue;
+    const result = await applyApiFootballUpdate(fixture, nameIndex);
+    if (result === "updated") updated += 1;
+  }
 
-    await upsertMatch(fixture.external_fixture_id, fixtureToRow(fixture));
+  return { live: liveFixtures.length, updated };
+}
 
-    if (
-      isFinishedStatus(fixture.status) &&
-      !isFinishedStatus(existing.status) &&
-      fixture.home_score !== null &&
-      fixture.away_score !== null
-    ) {
-      await scoreMatchPredictions(existing.id, fixture.home_score, fixture.away_score);
+type ApplyResult = "updated" | "unmatched" | "skipped";
+
+async function applyApiFootballUpdate(
+  fixture: NormalisedFixture,
+  nameIndex: Map<string, number>
+): Promise<ApplyResult> {
+  let existing =
+    (await getMatchByApiFootballId(fixture.external_fixture_id)) ??
+    (await findMatchingSeededMatch(fixture, nameIndex));
+
+  if (!existing) return "unmatched";
+
+  const wasFinished = isFinishedStatus(existing.status);
+  const nowFinished = isFinishedStatus(fixture.status);
+
+  await updateMatchLiveData(existing.id, {
+    api_football_fixture_id: fixture.external_fixture_id,
+    status: fixture.status,
+    home_score: fixture.home_score,
+    away_score: fixture.away_score,
+    home_score_halftime: fixture.home_score_halftime,
+    away_score_halftime: fixture.away_score_halftime,
+    is_locked: fixture.is_locked,
+    kickoff_at: fixture.kickoff_at,
+    ...(resolveWc26TeamId(fixture.home_team_name, nameIndex)
+      ? {
+          home_team_id: resolveWc26TeamId(fixture.home_team_name, nameIndex)!,
+          home_team_name: fixture.home_team_name,
+          home_team_logo: fixture.home_team_logo,
+        }
+      : {}),
+    ...(resolveWc26TeamId(fixture.away_team_name, nameIndex)
+      ? {
+          away_team_id: resolveWc26TeamId(fixture.away_team_name, nameIndex)!,
+          away_team_name: fixture.away_team_name,
+          away_team_logo: fixture.away_team_logo,
+        }
+      : {}),
+  });
+
+  if (
+    !wasFinished &&
+    nowFinished &&
+    fixture.home_score !== null &&
+    fixture.away_score !== null
+  ) {
+    await scoreMatchPredictions(existing.id, fixture.home_score, fixture.away_score);
+
+    const round = existing.round?.toLowerCase() ?? fixture.round?.toLowerCase() ?? "";
+    if (round.includes("final") && !round.includes("semi") && !round.includes("3rd")) {
+      await scoreBracketsFromFinal(existing, fixture.home_score, fixture.away_score);
     }
   }
 
-  return { live: liveFixtures.length };
+  return "updated";
 }
 
-async function scoreMatchPredictions(
+async function findMatchingSeededMatch(
+  fixture: NormalisedFixture,
+  nameIndex: Map<string, number>
+): Promise<Match | null> {
+  const homeId =
+    resolveWc26TeamId(fixture.home_team_name, nameIndex) ?? fixture.home_team_id;
+  const awayId =
+    resolveWc26TeamId(fixture.away_team_name, nameIndex) ?? fixture.away_team_id;
+
+  if (!homeId || !awayId || homeId === 0 || awayId === 0) {
+    return null;
+  }
+
+  const kickoffDate = fixture.kickoff_at.split("T")[0];
+  return findMatchByTeamsAndDate(homeId, awayId, kickoffDate);
+}
+
+export async function scoreMatchPredictions(
   matchId: string,
   homeScore: number,
   awayScore: number
@@ -120,72 +197,19 @@ async function scoreMatchPredictions(
 
   const leagueIds = [...new Set(predictions.map((p) => p.league_id))];
   for (const leagueId of leagueIds) {
-    await refreshBadgesForLeague(leagueId);
+    await syncBadgesForLeague(leagueId);
   }
-}
-
-async function refreshBadgesForLeague(leagueId: string): Promise<void> {
-  const members = await getLeagueMembers(leagueId);
-  if (!members.length) return;
-
-  const userIds = members.map((m) => m.user_id);
-  const predictions = await getPredictionsForLeague(leagueId);
-  const matches = await listAllMatches();
-  const captainPicks = await getCaptainPicksForLeague(leagueId);
-
-  const earned = evaluateBadges(
-    predictions,
-    matches,
-    captainPicks,
-    userIds
-  );
-
-  for (const badge of earned) {
-    await upsertBadge(
-      leagueId,
-      badge.user_id,
-      badge.badge_type,
-      badge.metadata ?? {}
-    );
-  }
-}
-
-function fixtureToRow(fixture: NormalisedFixture): Omit<Match, "id"> {
-  return {
-    external_fixture_id: fixture.external_fixture_id,
-    matchday: fixture.matchday,
-    round: fixture.round,
-    stage: fixture.stage,
-    home_team_id: fixture.home_team_id,
-    home_team_name: fixture.home_team_name,
-    home_team_logo: fixture.home_team_logo,
-    away_team_id: fixture.away_team_id,
-    away_team_name: fixture.away_team_name,
-    away_team_logo: fixture.away_team_logo,
-    venue: fixture.venue,
-    kickoff_at: fixture.kickoff_at,
-    status: fixture.status,
-    home_score: fixture.home_score,
-    away_score: fixture.away_score,
-    home_score_halftime: fixture.home_score_halftime,
-    away_score_halftime: fixture.away_score_halftime,
-    is_locked: fixture.is_locked,
-  };
 }
 
 async function scoreBracketsFromFinal(
-  fixture: NormalisedFixture
+  match: Match,
+  homeScore: number,
+  awayScore: number
 ): Promise<void> {
-  if (fixture.home_score === null || fixture.away_score === null) return;
-
   const championId =
-    fixture.home_score > fixture.away_score
-      ? fixture.home_team_id
-      : fixture.away_team_id;
+    homeScore > awayScore ? match.home_team_id : match.away_team_id;
   const runnerUpId =
-    fixture.home_score > fixture.away_score
-      ? fixture.away_team_id
-      : fixture.home_team_id;
+    homeScore > awayScore ? match.away_team_id : match.home_team_id;
 
   const semiMatches = await listSemiFinalMatches();
   const semiFinalistIds: number[] = [];
@@ -199,4 +223,4 @@ async function scoreBracketsFromFinal(
   await scoreBracketPredictions(championId, runnerUpId, semiFinalistIds);
 }
 
-export { refreshBadgesForLeague };
+export { syncBadgesForLeague } from "@/lib/sync/badges";

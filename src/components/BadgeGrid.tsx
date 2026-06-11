@@ -9,7 +9,7 @@ export function BadgeGrid({ badges, memberNames }: BadgeGridProps) {
   if (!badges.length) {
     return (
       <div className="card p-8 text-center text-white/60">
-        No badges earned yet — keep predicting!
+        No badges earned yet. Keep predicting!
       </div>
     );
   }

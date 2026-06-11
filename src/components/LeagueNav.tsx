@@ -1,0 +1,98 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Calendar, Trophy, Crown, Award } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export const LEAGUE_NAV_LINKS = [
+  { suffix: "", label: "Matches", shortLabel: "Matches", icon: Calendar },
+  { suffix: "/leaderboard", label: "Leaderboard", shortLabel: "Table", icon: Trophy },
+  { suffix: "/bracket", label: "Bracket", shortLabel: "Bracket", icon: Crown },
+  { suffix: "/badges", label: "Badges", shortLabel: "Badges", icon: Award },
+] as const;
+
+function leagueHref(leagueId: string, suffix: string) {
+  return `/league/${leagueId}${suffix}`;
+}
+
+function isLinkActive(pathname: string, leagueId: string, suffix: string) {
+  const href = leagueHref(leagueId, suffix);
+  if (suffix === "") {
+    return pathname === href;
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function LeagueNavDesktop({ leagueId }: { leagueId: string }) {
+  const pathname = usePathname();
+
+  return (
+    <nav
+      className="hidden items-center gap-1 rounded-xl border border-white/10 bg-black/20 p-1 md:flex"
+      aria-label="League sections"
+    >
+      {LEAGUE_NAV_LINKS.map(({ suffix, label, icon: Icon }) => {
+        const href = leagueHref(leagueId, suffix);
+        const active = isLinkActive(pathname, leagueId, suffix);
+
+        return (
+          <Link
+            key={suffix}
+            href={href}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition",
+              active
+                ? "bg-gold-500 text-pitch-900 shadow-sm"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+export function LeagueNavMobile({ leagueId }: { leagueId: string }) {
+  const pathname = usePathname();
+
+  return (
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#0f172a]/95 backdrop-blur-lg md:hidden"
+      aria-label="League sections"
+    >
+      <div className="mx-auto flex max-w-lg justify-around px-2 py-2">
+        {LEAGUE_NAV_LINKS.map(({ suffix, label, shortLabel, icon: Icon }) => {
+          const href = leagueHref(leagueId, suffix);
+          const active = isLinkActive(pathname, leagueId, suffix);
+
+          return (
+            <Link
+              key={suffix}
+              href={href}
+              className={cn(
+                "flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition",
+                active ? "text-gold-400" : "text-white/50 hover:text-white/80"
+              )}
+            >
+              <span
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition",
+                  active ? "bg-gold-500/15 ring-1 ring-gold-400/30" : "bg-transparent"
+                )}
+              >
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="text-[11px] font-medium leading-none">
+                {shortLabel ?? label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}

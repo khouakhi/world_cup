@@ -50,6 +50,8 @@ export interface LeagueMember {
 export interface Match {
   id: string;
   external_fixture_id: number;
+  /** Set when matched to an API-Football fixture for live score sync. */
+  api_football_fixture_id?: number | null;
   matchday: string;
   round: string | null;
   stage: string | null;
@@ -124,25 +126,9 @@ export interface LeaderboardEntry {
   display_name: string;
   match_points: number;
   bracket_points: number;
-  top_three_points: number;
   total_points: number;
   exact_scores: number;
   rank: number;
-}
-
-export interface TopThreePrediction {
-  id: string;
-  league_id: string;
-  user_id: string;
-  first_team_id: number | null;
-  first_team_name: string | null;
-  second_team_id: number | null;
-  second_team_name: string | null;
-  third_team_id: number | null;
-  third_team_name: string | null;
-  points_awarded: number;
-  is_locked: boolean;
-  submitted_at: string;
 }
 
 export interface MatchdayLeaderboardEntry {
@@ -191,12 +177,7 @@ export const BRACKET_POINTS = {
   semiFinalist: 5,
 } as const;
 
-export const TOP_THREE_POINTS = {
-  first: 25,
-  second: 15,
-  third: 10,
-} as const;
-
 export const WORLD_CUP_LEAGUE_ID = 1;
+/** Tournament year the app is built for (display). API season may differ on free tier. */
 export const WORLD_CUP_SEASON = 2026;
 export const PREDICTION_LOCK_MINUTES = 15;

@@ -3,16 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
+import { TeamPicker, type TeamOption } from "@/components/TeamPicker";
 import type { League, BracketPrediction } from "@/types";
 import { BRACKET_POINTS } from "@/types";
 import { Crown } from "lucide-react";
 import { MobileNav } from "@/components/MobileNav";
-
-interface Team {
-  id: number;
-  name: string;
-  logo: string | null;
-}
 
 export default function BracketPage() {
   const params = useParams();
@@ -20,7 +15,9 @@ export default function BracketPage() {
   const leagueId = params.id as string;
 
   const [league, setLeague] = useState<League | null>(null);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<TeamOption[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [teamsError, setTeamsError] = useState("");
   const [bracket, setBracket] = useState<Partial<BracketPrediction>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -37,9 +34,20 @@ export default function BracketPage() {
         leaguesData.leagues?.find((l: League) => l.id === leagueId) ?? null
       );
 
+      setTeamsLoading(true);
+      setTeamsError("");
       const teamsRes = await fetch("/api/matches", { method: "POST" });
       const teamsData = await teamsRes.json();
-      setTeams(teamsData.teams ?? []);
+      if (!teamsRes.ok) {
+        setTeamsError(teamsData.error ?? "Could not load teams");
+        setTeams([]);
+      } else {
+        const sorted = [...(teamsData.teams ?? [])].sort((a: TeamOption, b: TeamOption) =>
+          a.name.localeCompare(b.name)
+        );
+        setTeams(sorted);
+      }
+      setTeamsLoading(false);
 
       const bracketRes = await fetch(`/api/bracket?league_id=${leagueId}`);
       const bracketData = await bracketRes.json();
@@ -83,7 +91,7 @@ export default function BracketPage() {
 
   function selectTeam(
     field: "champion" | "runner_up" | "semi",
-    team: Team,
+    team: TeamOption,
     index?: number
   ) {
     if (field === "champion") {
@@ -125,86 +133,66 @@ export default function BracketPage() {
           {BRACKET_POINTS.semiFinalist} pts each
         </p>
 
+        {teamsLoading && (
+          <p className="mb-4 text-sm text-white/50">Loading World Cup teams…</p>
+        )}
+        {teamsError && (
+          <p className="card mb-4 p-4 text-sm text-red-400">{teamsError}</p>
+        )}
+
         <form onSubmit={handleSave} className="space-y-6">
-          <TeamSelect
+          <TeamPicker
             label="🏆 Champion"
             teams={teams}
             selectedId={bracket.champion_team_id}
             onSelect={(t) => selectTeam("champion", t)}
+            placeholder="Choose champion…"
           />
-          <TeamSelect
+          <TeamPicker
             label="🥈 Runner-up"
             teams={teams}
             selectedId={bracket.runner_up_team_id}
             onSelect={(t) => selectTeam("runner_up", t)}
+            placeholder="Choose runner-up…"
           />
 
           <div>
             <label className="mb-2 block text-sm font-semibold">
               Semi-finalists (pick 4)
             </label>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="relative grid gap-3 overflow-visible sm:grid-cols-2">
               {[0, 1, 2, 3].map((i) => (
-                <TeamSelect
+                <TeamPicker
                   key={i}
                   label={`Semi ${i + 1}`}
                   teams={teams}
                   selectedId={bracket.semi_finalist_ids?.[i]}
                   onSelect={(t) => selectTeam("semi", t, i)}
                   compact
+                  placeholder="Choose team…"
                 />
               ))}
             </div>
           </div>
 
-          <button type="submit" disabled={saving || bracket.is_locked} className="btn-primary w-full">
+          <button
+            type="submit"
+            disabled={saving || bracket.is_locked || teamsLoading || teams.length === 0}
+            className="btn-primary w-full"
+          >
             {saving ? "Saving…" : bracket.is_locked ? "Bracket locked" : "Save bracket"}
           </button>
 
           {message && (
-            <p className={`text-sm ${message.includes("saved") ? "text-green-400" : "text-red-400"}`}>
+            <p
+              className={`text-sm ${message.includes("saved") ? "text-green-400" : "text-red-400"}`}
+            >
               {message}
             </p>
           )}
         </form>
       </main>
       <MobileNav leagueId={leagueId} />
-    </div>
-  );
-}
-
-function TeamSelect({
-  label,
-  teams,
-  selectedId,
-  onSelect,
-  compact = false,
-}: {
-  label: string;
-  teams: Team[];
-  selectedId?: number | null;
-  onSelect: (team: Team) => void;
-  compact?: boolean;
-}) {
-  return (
-    <div className={compact ? "" : "card p-4"}>
-      {!compact && <label className="mb-2 block text-sm font-semibold">{label}</label>}
-      {compact && <label className="mb-1 block text-xs text-white/60">{label}</label>}
-      <select
-        className="input"
-        value={selectedId ?? ""}
-        onChange={(e) => {
-          const team = teams.find((t) => t.id === parseInt(e.target.value, 10));
-          if (team) onSelect(team);
-        }}
-      >
-        <option value="">Select team…</option>
-        {teams.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }

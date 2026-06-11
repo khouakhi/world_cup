@@ -12,7 +12,9 @@ Total cost for your group: **£0/month** if you stay on free tiers.
 |---------|------|------|
 | **Vercel Hobby** | Hosts the website (public URL) | **Free** — no card needed |
 | **Firebase Spark** | Login + database (already set up) | **Free** for 20–30 users |
-| **API-Football** | Match fixtures & scores | **Free** (100 API calls/day) |
+| **API-Football** | Live scores during the tournament | **Free** (100 API calls/day) |
+
+Fixtures and the 48 World Cup 2026 teams come from **bundled static data** (no API needed for the schedule). API-Football only updates live scores when the 2026 season is on your plan.
 
 You do **not** need Firebase App Hosting (that needs a paid Blaze plan).
 
@@ -76,6 +78,7 @@ Wait ~2 minutes. You get a URL like `https://world-cup-predictions-abc123.vercel
 | `NEXT_PUBLIC_APP_URL` | your Vercel URL (https://....vercel.app) |
 | `CRON_SECRET` | same random string as local |
 | `API_FOOTBALL_KEY` | your API-Football key (when you have one) |
+| `API_FOOTBALL_SEASON` | `2022` on free tier; `2026` when your plan includes it |
 
 3. **Service account (important):**
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserFromRequest } from "@/lib/firebase/auth";
-import { fetchWorldCupTeams } from "@/lib/api-football/client";
+import { getWc26Teams } from "@/lib/worldcup2026/normalise";
+import { ensureWorldCup2026Seeded } from "@/lib/worldcup2026/seed";
 import {
   listMatches,
   listMatchdays,
@@ -15,6 +16,8 @@ export async function GET(request: NextRequest) {
 
   const matchday = request.nextUrl.searchParams.get("matchday");
   const status = request.nextUrl.searchParams.get("status");
+
+  await ensureWorldCup2026Seeded();
 
   let statusFilter: string[] | undefined;
   if (status === "upcoming") {
@@ -45,11 +48,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST() {
   try {
-    const teams = await fetchWorldCupTeams();
+    const teams = getWc26Teams().map((t) => ({
+      id: t.id,
+      name: t.name,
+      logo: t.logo,
+    }));
     return NextResponse.json({ teams });
   } catch (error) {
+    console.error("Failed to load World Cup 2026 teams:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch teams" },
+      { error: "Could not load teams. Please try again later." },
       { status: 500 }
     );
   }
