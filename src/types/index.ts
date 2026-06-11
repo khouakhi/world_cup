@@ -50,7 +50,9 @@ export interface LeagueMember {
 export interface Match {
   id: string;
   external_fixture_id: number;
-  /** Set when matched to an API-Football fixture for live score sync. */
+  /** Set when matched to a football-data.org fixture for schedule and live sync. */
+  football_data_match_id?: number | null;
+  /** @deprecated API-Football — use football_data_match_id instead */
   api_football_fixture_id?: number | null;
   matchday: string;
   round: string | null;

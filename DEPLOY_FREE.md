@@ -12,9 +12,9 @@ Total cost for your group: **£0/month** if you stay on free tiers.
 |---------|------|------|
 | **Vercel Hobby** | Hosts the website (public URL) | **Free** — no card needed |
 | **Firebase Spark** | Login + database (already set up) | **Free** for 20–30 users |
-| **API-Football** | Live scores during the tournament | **Free** (100 API calls/day) |
+| **football-data.org** | Kickoff times and live scores | **Free** (World Cup included) |
 
-Fixtures and the 48 World Cup 2026 teams come from **bundled static data** (no API needed for the schedule). API-Football only updates live scores when the 2026 season is on your plan.
+Fixtures and the 48 World Cup 2026 teams come from **bundled static data**. [football-data.org](https://www.football-data.org/) supplies correct UTC kickoff times and live results (free tier includes the World Cup).
 
 You do **not** need Firebase App Hosting (that needs a paid Blaze plan).
 
@@ -77,8 +77,7 @@ Wait ~2 minutes. You get a URL like `https://world-cup-predictions-abc123.vercel
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | from `.env.local` |
 | `NEXT_PUBLIC_APP_URL` | your Vercel URL (https://....vercel.app) |
 | `CRON_SECRET` | same random string as local |
-| `API_FOOTBALL_KEY` | your API-Football key (when you have one) |
-| `API_FOOTBALL_SEASON` | `2022` on free tier; `2026` when your plan includes it |
+| `FOOTBALL_DATA_API_TOKEN` | from [football-data.org](https://www.football-data.org/) (free — sign in → API token) |
 
 3. **Service account (important):**
 
@@ -137,7 +136,8 @@ Turn the job **off** when the tournament ends.
 | Firebase Auth | Unlimited email users | ~30 |
 | Firestore | 50,000 reads/day | A few thousand/day |
 | Vercel bandwidth | Generous on Hobby | Tiny |
-| API-Football | 100 requests/day | ~2–5/day with daily sync |
+| API-Football | 100 requests/day | Not used (optional legacy) |
+| football-data.org | 10 requests/minute on free tier | ~2–5/day with daily sync |
 
 ---
 

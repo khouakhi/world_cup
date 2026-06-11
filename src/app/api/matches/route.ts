@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserFromRequest } from "@/lib/firebase/auth";
 import { getWc26Teams } from "@/lib/worldcup2026/normalise";
 import { ensureWorldCup2026Seeded } from "@/lib/worldcup2026/seed";
+import { getFootballDataApiToken } from "@/lib/football-data/config";
+import { syncFixtures } from "@/lib/sync/fixtures";
 import {
   listMatches,
   listMatchdays,
@@ -18,6 +20,19 @@ export async function GET(request: NextRequest) {
   const status = request.nextUrl.searchParams.get("status");
 
   await ensureWorldCup2026Seeded();
+
+  if (getFootballDataApiToken()) {
+    const existing = await listMatches();
+    const needsScheduleSync = existing.some(
+      (m) =>
+        m.external_fixture_id >= 1 &&
+        m.external_fixture_id <= 104 &&
+        !m.football_data_match_id
+    );
+    if (needsScheduleSync) {
+      await syncFixtures();
+    }
+  }
 
   let statusFilter: string[] | undefined;
   if (status === "upcoming") {

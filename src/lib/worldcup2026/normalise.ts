@@ -13,7 +13,7 @@ const ROUND_LABELS: Record<string, string> = {
   final: "Final",
 };
 
-/** Parse MM/DD/YYYY HH:mm from worldcup2026 JSON into ISO UTC. */
+/** Fallback when football-data.org has not synced yet — not accurate for US time zones. */
 export function parseWc26LocalDate(localDate: string): string {
   const [datePart, timePart] = localDate.split(" ");
   const [month, day, year] = datePart.split("/").map(Number);
@@ -101,6 +101,7 @@ export function normaliseAllWc26Matches(): Omit<Match, "id">[] {
 
 /** Normalise team names for matching API-Football responses to wc26 data. */
 export function normaliseTeamName(name: string): string {
+  if (!name) return "";
   return name
     .toLowerCase()
     .normalize("NFD")
@@ -118,7 +119,7 @@ export function buildTeamNameIndex(): Map<string, number> {
     KOR: ["south korea", "korea republic", "korearepublic"],
     CZE: ["czech republic", "czechia"],
     CAN: ["canada"],
-    BIH: ["bosnia and herzegovina", "bosnia"],
+    BIH: ["bosnia and herzegovina", "bosnia", "bosniaherzegovina", "bosnia h"],
     QAT: ["qatar"],
     SUI: ["switzerland"],
     BRA: ["brazil"],

@@ -14,23 +14,28 @@ export function generateInviteCode(): string {
   return code;
 }
 
+const UK_TIMEZONE = "Europe/London";
+
 export function formatKickoff(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", {
+    timeZone: UK_TIMEZONE,
     weekday: "short",
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
+    timeZoneName: "short",
   }).format(new Date(iso));
 }
 
 export function formatMatchday(date: string): string {
   return new Intl.DateTimeFormat("en-GB", {
+    timeZone: UK_TIMEZONE,
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(new Date(date + (date.includes("T") ? "" : "T12:00:00Z")));
 }
 
 export function isMatchOpen(kickoffAt: string, isLocked: boolean): boolean {

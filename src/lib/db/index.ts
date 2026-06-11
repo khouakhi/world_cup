@@ -183,21 +183,37 @@ export async function getMatchByApiFootballId(
   return { id: doc.id, ...doc.data() } as Match;
 }
 
-export async function findMatchByTeamsAndDate(
+export async function getMatchByFootballDataId(
+  matchId: number
+): Promise<Match | null> {
+  const snap = await db()
+    .collection("matches")
+    .where("football_data_match_id", "==", matchId)
+    .limit(1)
+    .get();
+
+  if (snap.empty) return null;
+  const doc = snap.docs[0];
+  return { id: doc.id, ...doc.data() } as Match;
+}
+
+export async function findMatchByTeams(
   homeTeamId: number,
-  awayTeamId: number,
-  kickoffDate: string
+  awayTeamId: number
 ): Promise<Match | null> {
   const snap = await db().collection("matches").get();
   const match = snap.docs
     .map((d) => ({ id: d.id, ...d.data() }) as Match)
     .find(
-      (m) =>
-        m.home_team_id === homeTeamId &&
-        m.away_team_id === awayTeamId &&
-        m.matchday === kickoffDate
+      (m) => m.home_team_id === homeTeamId && m.away_team_id === awayTeamId
     );
   return match ?? null;
+}
+
+function stripUndefined<T extends Record<string, unknown>>(data: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined)
+  ) as Partial<T>;
 }
 
 export async function updateMatchLiveData(
@@ -212,23 +228,26 @@ export async function updateMatchLiveData(
       | "away_score_halftime"
       | "is_locked"
       | "kickoff_at"
+      | "matchday"
+      | "round"
+      | "stage"
+      | "venue"
       | "home_team_id"
       | "home_team_name"
       | "home_team_logo"
       | "away_team_id"
       | "away_team_name"
       | "away_team_logo"
+      | "football_data_match_id"
       | "api_football_fixture_id"
     >
   >
 ): Promise<void> {
-  await db()
-    .collection("matches")
-    .doc(matchId)
-    .set(
-      { ...data, synced_at: new Date().toISOString() },
-      { merge: true }
-    );
+  const payload = stripUndefined({
+    ...data,
+    synced_at: new Date().toISOString(),
+  });
+  await db().collection("matches").doc(matchId).set(payload, { merge: true });
 }
 
 export async function upsertMatch(
