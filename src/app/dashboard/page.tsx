@@ -5,12 +5,16 @@ import { useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { Copy, Check, Plus } from "lucide-react";
 import { isLeagueAdmin } from "@/lib/constants";
-import {
-  apiFetch,
-  ensureServerSession,
-  isFirebaseSignedIn,
-} from "@/lib/api-client";
+import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 import type { League } from "@/types";
+
+function readErrorMessage(data: unknown, fallback: string): string {
+  if (data && typeof data === "object" && "error" in data) {
+    const error = (data as { error?: unknown }).error;
+    if (typeof error === "string") return error;
+  }
+  return fallback;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -26,7 +30,7 @@ export default function DashboardPage() {
     initDashboard();
   }, []);
 
-  async function joinMainLeague(): Promise<League | null> {
+  async function joinMainLeague(): Promise<{ league: League | null; error?: string }> {
     const joinRes = await apiFetch("/api/leagues", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -34,9 +38,9 @@ export default function DashboardPage() {
     });
     const joinData = await joinRes.json();
     if (joinRes.ok && joinData.league) {
-      return joinData.league as League;
+      return { league: joinData.league as League };
     }
-    return null;
+    return { league: null, error: readErrorMessage(joinData, "Could not join the league") };
   }
 
   async function initDashboard() {
@@ -49,12 +53,6 @@ export default function DashboardPage() {
       return;
     }
 
-    try {
-      await ensureServerSession();
-    } catch {
-      // Bearer token auth still works.
-    }
-
     const meRes = await apiFetch("/api/auth/me");
     let userEmail: string | undefined;
     if (meRes.ok) {
@@ -65,44 +63,31 @@ export default function DashboardPage() {
     const admin = isLeagueAdmin(userEmail);
     setIsAdmin(admin);
 
-    if (!admin) {
-      const joined = await joinMainLeague();
-      if (joined) {
-        router.replace(`/league/${joined.id}`);
-        return;
-      }
-    }
-
-    let leaguesRes = await apiFetch("/api/leagues");
-    if (!leaguesRes.ok) {
-      try {
-        await ensureServerSession();
-      } catch {
-        // Ignore and retry below.
-      }
-      leaguesRes = await apiFetch("/api/leagues");
-    }
-
-    if (!leaguesRes.ok) {
-      setError("Could not load your league. Tap retry below.");
-      setLoading(false);
+    // Everyone (including the organiser) goes straight to the main league.
+    const { league: joined, error: joinError } = await joinMainLeague();
+    if (joined) {
+      router.replace(`/league/${joined.id}`);
       return;
     }
 
-    const leaguesData = await leaguesRes.json();
-    const userLeagues: League[] = leaguesData.leagues ?? [];
-
-    if (!admin) {
-      if (userLeagues.length > 0) {
-        router.replace(`/league/${userLeagues[0].id}`);
-        return;
-      }
-      setError("Could not join the league. Tap retry below.");
-      setLoading(false);
-      return;
+    if (joinError) {
+      setError(joinError);
     }
 
-    setLeagues(userLeagues);
+    if (admin) {
+      const leaguesRes = await apiFetch("/api/leagues");
+      if (leaguesRes.ok) {
+        const leaguesData = await leaguesRes.json();
+        setLeagues(leaguesData.leagues ?? []);
+        setError("");
+      } else {
+        const leaguesData = await leaguesRes.json().catch(() => ({}));
+        if (!joinError) {
+          setError(readErrorMessage(leaguesData, "Could not load your league"));
+        }
+      }
+    }
+
     setLoading(false);
   }
 
@@ -117,7 +102,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ action: "create", name: newLeagueName }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to create league");
+      if (!res.ok) throw new Error(readErrorMessage(data, "Failed to create league"));
       router.push(`/league/${data.league.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -202,7 +187,7 @@ export default function DashboardPage() {
 
         {error && (
           <div className="mt-4 space-y-3">
-            <p className="text-sm text-red-400">{error}</p>
+            <p className="text-sm text-red-300">{error}</p>
             <button
               type="button"
               onClick={() => initDashboard()}
