@@ -46,14 +46,16 @@ export async function POST(request: NextRequest) {
 
     const isConfigError =
       message.includes("FIREBASE_SERVICE_ACCOUNT") ||
+      message.includes("Firebase admin not configured") ||
       message.includes("ENOENT") ||
-      message.includes("Unexpected token");
+      message.includes("Unexpected token") ||
+      message.includes("not valid JSON");
 
     return NextResponse.json(
       {
         error: isConfigError
-          ? "Server setup incomplete. Check FIREBASE_SERVICE_ACCOUNT_PATH in .env.local (see FIREBASE_SETUP.md Step 4)."
-          : "Could not sign you in. Stop the app (Ctrl+C), run npm run dev again, and retry.",
+          ? "Server not configured on Vercel. Add FIREBASE_SERVICE_ACCOUNT_JSON (full JSON from Firebase) in Environment Variables, then redeploy."
+          : "Could not sign you in. Please try again.",
         detail: process.env.NODE_ENV === "development" ? message : undefined,
       },
       { status: 401 }

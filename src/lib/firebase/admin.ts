@@ -6,9 +6,15 @@ function loadServiceAccount(): admin.ServiceAccount {
   const filePath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
 
   // Production: JSON provided as env var / secret (Firebase App Hosting, Vercel)
-  const json = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  const json = process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim();
   if (json) {
-    return JSON.parse(json) as admin.ServiceAccount;
+    try {
+      return JSON.parse(json) as admin.ServiceAccount;
+    } catch {
+      throw new Error(
+        "FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON. On Vercel, paste the entire firebase-service-account.json file as the value."
+      );
+    }
   }
 
   if (filePath) {

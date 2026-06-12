@@ -12,14 +12,31 @@ import {
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
 async function createSession(idToken: string, displayName?: string) {
-  const res = await fetch("/api/auth/session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken, displayName }),
-  });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.error ?? "Could not create session");
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 25_000);
+
+  try {
+    const res = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken, displayName }),
+      signal: controller.signal,
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(
+        (data as { error?: string }).error ?? "Could not create session"
+      );
+    }
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error("Sign-in timed out. Check your connection and try again.");
+    }
+    throw err;
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
@@ -122,7 +139,9 @@ export default function AuthPage() {
           </form>
 
           {message && (
-            <p className="mt-4 text-sm text-red-400">{message}</p>
+            <div className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
+              {message}
+            </div>
           )}
 
           <button
