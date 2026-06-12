@@ -5,12 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { MatchCard } from "@/components/MatchCard";
 import { formatMatchday } from "@/lib/utils";
-import type {
-  Match,
-  Prediction,
-  League,
-  MatchdayLeaderboardEntry,
-} from "@/types";
+import type { Match, Prediction, League } from "@/types";
 import { ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { ScoringHelpBox } from "@/components/ScoringHelpBox";
 import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
@@ -30,7 +25,6 @@ export default function LeaguePage() {
   const [selectedDay, setSelectedDay] = useState<string>("");
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [captainMatchId, setCaptainMatchId] = useState<string | null>(null);
-  const [matchdayWinner, setMatchdayWinner] = useState<MatchdayLeaderboardEntry | null>(null);
   const [copied, setCopied] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -44,39 +38,28 @@ export default function LeaguePage() {
     const current = leaguesData.leagues?.find((l: League) => l.id === leagueId);
     setLeague(current ?? null);
 
-    const matchParams = selectedDay
-      ? `?matchday=${selectedDay}`
-      : "?status=upcoming";
-    const matchesRes = await apiFetch(`/api/matches${matchParams}`);
+    const matchQuery = selectedDay ? `?matchday=${selectedDay}` : "";
+    const matchesRes = await apiFetch(`/api/matches${matchQuery}`);
     const matchesData = await matchesRes.json();
     setMatches(matchesData.matches ?? []);
     setMatchdays(matchesData.matchdays ?? []);
 
-    if (!selectedDay && matchesData.matchdays?.length) {
-      const today = new Date().toISOString().split("T")[0];
-      const upcoming = matchesData.matchdays.find((d: string) => d >= today);
-      setSelectedDay(upcoming ?? matchesData.matchdays[0]);
+    const activeDay = selectedDay || matchesData.selected_matchday || "";
+    if (!selectedDay && matchesData.selected_matchday) {
+      setSelectedDay(matchesData.selected_matchday);
     }
 
     const predsRes = await apiFetch(`/api/predictions?league_id=${leagueId}`);
     const predsData = await predsRes.json();
     setPredictions(predsData.predictions ?? []);
 
-    const day = selectedDay || matchesData.matchdays?.[0];
-    if (day) {
+    if (activeDay) {
       const capRes = await apiFetch(
-        `/api/captain?league_id=${leagueId}&matchday=${day}`
+        `/api/captain?league_id=${leagueId}&matchday=${activeDay}`
       );
       const capData = await capRes.json();
       setCaptainMatchId(capData.captain_pick?.match_id ?? null);
     }
-
-    const lbRes = await apiFetch(
-      `/api/leaderboard?league_id=${leagueId}${day ? `&matchday=${day}` : ""}`
-    );
-    const lbData = await lbRes.json();
-    const winner = lbData.matchday_leaderboard?.[0] ?? null;
-    setMatchdayWinner(winner && winner.points > 0 ? winner : null);
   }, [leagueId, selectedDay, router]);
 
   useEffect(() => {
@@ -147,15 +130,6 @@ export default function LeaguePage() {
                 {league.invite_code}
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </button>
-            </div>
-          </div>
-        )}
-
-        {matchdayWinner && (
-          <div className="card mb-6 p-4 text-center">
-            <span className="text-sm text-white/60">Matchday winner</span>
-            <div className="text-lg font-bold text-gold-400">
-              🥇 {matchdayWinner.display_name}: {matchdayWinner.points} pts
             </div>
           </div>
         )}

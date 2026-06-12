@@ -20,7 +20,7 @@ import {
   listAllMatches,
   updateMatchLiveData,
   getPredictionsForMatch,
-  getCaptainPick,
+  getCaptainPicksForMatchday,
   updatePredictionPoints,
   listSemiFinalMatches,
 } from "@/lib/db";
@@ -74,7 +74,16 @@ export async function syncFixtures(): Promise<{
   updated += knockoutUpdated;
   unmatched -= knockoutUpdated;
 
+  await refreshWorldCupMatchdaysMetadata();
+
   return { synced: 0, updated, unmatched };
+}
+
+async function refreshWorldCupMatchdaysMetadata(): Promise<void> {
+  const { listMatchdays } = await import("@/lib/db");
+  const { saveWorldCupMetadata } = await import("@/lib/worldcup2026/metadata");
+  const matchdays = await listMatchdays();
+  await saveWorldCupMetadata({ matchdays, seeded: true, fixture_count: 104 });
 }
 
 export async function syncLiveResults(): Promise<{ live: number; updated: number }> {
@@ -249,20 +258,23 @@ export async function scoreMatchPredictions(
 
   const match = await getMatch(matchId);
   const matchday = match?.matchday ?? "";
+  const captainPicks = matchday
+    ? await getCaptainPicksForMatchday(matchday)
+    : [];
+  const captainByUserLeague = new Map(
+    captainPicks.map((pick) => [`${pick.league_id}_${pick.user_id}`, pick.match_id])
+  );
 
   for (const pred of predictions) {
-    const captainPick = await getCaptainPick(
-      pred.league_id,
-      pred.user_id,
-      matchday
-    );
+    const isCaptain =
+      captainByUserLeague.get(`${pred.league_id}_${pred.user_id}`) === matchId;
 
     const breakdown = calculateMatchPoints(
       pred.home_score,
       pred.away_score,
       homeScore,
       awayScore,
-      captainPick?.match_id === matchId
+      isCaptain
     );
 
     await updatePredictionPoints(pred.id, breakdown.totalPoints);

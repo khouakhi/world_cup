@@ -99,13 +99,16 @@ export async function getLeaguesForUser(userId: string): Promise<League[]> {
     .where("user_id", "==", userId)
     .get();
 
-  const leagues: League[] = [];
-  for (const memberDoc of members.docs) {
-    const leagueId = memberDoc.data().league_id as string;
-    const league = await getLeague(leagueId);
-    if (league) leagues.push(league);
-  }
-  return leagues;
+  if (members.empty) return [];
+
+  const refs = members.docs.map((memberDoc) =>
+    db().collection("leagues").doc(memberDoc.data().league_id as string)
+  );
+  const leagueDocs = await db().getAll(...refs);
+
+  return leagueDocs
+    .filter((doc) => doc.exists)
+    .map((doc) => ({ id: doc.id, ...doc.data() }) as League);
 }
 
 export async function addLeagueMember(
@@ -429,6 +432,16 @@ export async function getCaptainPick(
   return doc.data() as CaptainPick;
 }
 
+export async function getCaptainPicksForMatchday(
+  matchday: string
+): Promise<CaptainPick[]> {
+  const snap = await db()
+    .collection("captainPicks")
+    .where("matchday", "==", matchday)
+    .get();
+  return snap.docs.map((d) => d.data() as CaptainPick);
+}
+
 export async function getCaptainPicksForLeague(
   leagueId: string
 ): Promise<CaptainPick[]> {
@@ -579,13 +592,22 @@ export async function getMatchPreview(matchId: string): Promise<{
 export async function getMatchPreviews(
   matchIds: string[]
 ): Promise<Record<string, { preview_text: string; fun_fact: string | null }>> {
-  const previews: Record<string, { preview_text: string; fun_fact: string | null }> = {};
-  await Promise.all(
-    matchIds.map(async (id) => {
-      const preview = await getMatchPreview(id);
-      if (preview) previews[id] = preview;
-    })
-  );
+  if (!matchIds.length) return {};
+
+  const previews: Record<string, { preview_text: string; fun_fact: string | null }> =
+    {};
+  const refs = matchIds.map((id) => db().collection("matchPreviews").doc(id));
+  const docs = await db().getAll(...refs);
+
+  for (const doc of docs) {
+    if (!doc.exists) continue;
+    const data = doc.data()!;
+    previews[doc.id] = {
+      preview_text: data.preview_text as string,
+      fun_fact: (data.fun_fact as string | null) ?? null,
+    };
+  }
+
   return previews;
 }
 

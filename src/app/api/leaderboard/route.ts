@@ -11,7 +11,6 @@ import {
   getBracketPredictionsForLeague,
   listMatches,
 } from "@/lib/db";
-import { purgeLegacyDemoData, syncBadgesForLeague } from "@/lib/sync/badges";
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
@@ -31,9 +30,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ leaderboard: [], matchday_leaderboard: [] });
   }
 
-  await purgeLegacyDemoData();
-  await syncBadgesForLeague(leagueId);
-
   const predictions = (await getPredictionsForLeague(leagueId)).filter(
     (p) => p.match_id !== LEGACY_DEMO_MATCH_ID
   );
@@ -44,11 +40,7 @@ export async function GET(request: NextRequest) {
     bracketMap.set(b.user_id, b.points_awarded ?? 0);
   }
 
-  const leaderboard = aggregateLeaderboard(
-    members,
-    predictions,
-    bracketMap
-  );
+  const leaderboard = aggregateLeaderboard(members, predictions, bracketMap);
 
   let matchdayLeaderboard = null;
 
