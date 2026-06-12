@@ -6,8 +6,13 @@ import { Nav } from "@/components/Nav";
 import { TeamPicker, type TeamOption } from "@/components/TeamPicker";
 import type { League, BracketPrediction } from "@/types";
 import { BRACKET_POINTS } from "@/types";
-import { Crown } from "lucide-react";
+import { Clock, Crown, Lock } from "lucide-react";
 import { MobileNav } from "@/components/MobileNav";
+import {
+  formatBracketDeadlineCountdown,
+  getBracketDeadlineLabel,
+  isBracketSubmissionOpen,
+} from "@/lib/bracket-deadline";
 
 export default function BracketPage() {
   const params = useParams();
@@ -21,6 +26,10 @@ export default function BracketPage() {
   const [bracket, setBracket] = useState<Partial<BracketPrediction>>({});
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [submissionOpen, setSubmissionOpen] = useState(true);
+  const [countdown, setCountdown] = useState<string | null>(
+    formatBracketDeadlineCountdown()
+  );
 
   useEffect(() => {
     async function load() {
@@ -52,9 +61,22 @@ export default function BracketPage() {
       const bracketRes = await fetch(`/api/bracket?league_id=${leagueId}`);
       const bracketData = await bracketRes.json();
       if (bracketData.bracket) setBracket(bracketData.bracket);
+      if (typeof bracketData.submission_open === "boolean") {
+        setSubmissionOpen(bracketData.submission_open);
+      }
     }
     load();
   }, [leagueId, router]);
+
+  useEffect(() => {
+    const tick = () => {
+      setSubmissionOpen(isBracketSubmissionOpen());
+      setCountdown(formatBracketDeadlineCountdown());
+    };
+    tick();
+    const id = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -84,16 +106,20 @@ export default function BracketPage() {
     if (!res.ok) {
       setMessage(data.error ?? "Failed to save");
     } else {
-      setMessage("Bracket saved!");
+      setMessage("Bracket saved and locked!");
       setBracket(data.bracket);
     }
   }
+
+  const isLocked = Boolean(bracket.is_locked);
+  const isReadOnly = isLocked || !submissionOpen;
 
   function selectTeam(
     field: "champion" | "runner_up" | "semi",
     team: TeamOption,
     index?: number
   ) {
+    if (isReadOnly) return;
     if (field === "champion") {
       setBracket((b) => ({
         ...b,
@@ -127,11 +153,42 @@ export default function BracketPage() {
           <Crown className="h-6 w-6 text-gold-400" />
           Bracket Challenge
         </h1>
-        <p className="mb-6 text-sm text-white/60">
-          Predict before the tournament starts. Champion {BRACKET_POINTS.champion} pts ·
-          Runner-up {BRACKET_POINTS.runnerUp} pts · Semi-finalists{" "}
-          {BRACKET_POINTS.semiFinalist} pts each
+        <p className="mb-4 text-sm text-white/60">
+          Champion {BRACKET_POINTS.champion} pts · Runner-up {BRACKET_POINTS.runnerUp}{" "}
+          pts · Semi-finalists {BRACKET_POINTS.semiFinalist} pts each. Your picks lock as
+          soon as you save — choose carefully.
         </p>
+
+        <div className="card mb-6 flex items-start gap-3 p-4 text-sm">
+          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-white/60" />
+          <div>
+            <p className="font-medium text-white/90">
+              Deadline: {getBracketDeadlineLabel()}
+            </p>
+            {submissionOpen && countdown && (
+              <p className="mt-1 text-white/60">{countdown}</p>
+            )}
+            {!submissionOpen && (
+              <p className="mt-1 text-red-400">Submissions are now closed.</p>
+            )}
+          </div>
+        </div>
+
+        {isLocked && (
+          <div className="card mb-6 flex items-center gap-3 p-4 text-sm text-gold-400">
+            <Lock className="h-5 w-5 shrink-0" />
+            <span>Your bracket is locked. You cannot change your picks.</span>
+          </div>
+        )}
+
+        {!isLocked && !submissionOpen && (
+          <div className="card mb-6 flex items-center gap-3 p-4 text-sm text-red-400">
+            <Lock className="h-5 w-5 shrink-0" />
+            <span>
+              The deadline has passed and you did not submit a bracket in time.
+            </span>
+          </div>
+        )}
 
         {teamsLoading && (
           <p className="mb-4 text-sm text-white/50">Loading World Cup teams…</p>
@@ -147,6 +204,7 @@ export default function BracketPage() {
             selectedId={bracket.champion_team_id}
             onSelect={(t) => selectTeam("champion", t)}
             placeholder="Choose champion…"
+            disabled={isReadOnly}
           />
           <TeamPicker
             label="🥈 Runner-up"
@@ -154,6 +212,7 @@ export default function BracketPage() {
             selectedId={bracket.runner_up_team_id}
             onSelect={(t) => selectTeam("runner_up", t)}
             placeholder="Choose runner-up…"
+            disabled={isReadOnly}
           />
 
           <div>
@@ -170,18 +229,21 @@ export default function BracketPage() {
                   onSelect={(t) => selectTeam("semi", t, i)}
                   compact
                   placeholder="Choose team…"
+                  disabled={isReadOnly}
                 />
               ))}
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={saving || bracket.is_locked || teamsLoading || teams.length === 0}
-            className="btn-primary w-full"
-          >
-            {saving ? "Saving…" : bracket.is_locked ? "Bracket locked" : "Save bracket"}
-          </button>
+          {!isReadOnly && (
+            <button
+              type="submit"
+              disabled={saving || teamsLoading || teams.length === 0}
+              className="btn-primary w-full"
+            >
+              {saving ? "Saving…" : "Save and lock bracket"}
+            </button>
+          )}
 
           {message && (
             <p

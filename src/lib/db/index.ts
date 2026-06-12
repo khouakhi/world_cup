@@ -463,7 +463,7 @@ export async function upsertBracketPrediction(
     semi_finalist_ids: data.semi_finalist_ids ?? [],
     semi_finalist_names: data.semi_finalist_names ?? [],
     points_awarded: existing.data()?.points_awarded ?? 0,
-    is_locked: existing.data()?.is_locked ?? false,
+    is_locked: true,
     submitted_at: new Date().toISOString(),
   };
 

@@ -5,8 +5,11 @@ import {
   isLeagueMember,
   upsertBracketPrediction,
   getBracketPrediction,
-  countStartedMatches,
 } from "@/lib/db";
+import {
+  getBracketDeadlineLabel,
+  isBracketSubmissionOpen,
+} from "@/lib/bracket-deadline";
 
 const schema = z.object({
   league_id: z.string().min(1),
@@ -37,16 +40,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not a league member" }, { status: 403 });
   }
 
-  const startedCount = await countStartedMatches();
-  if (startedCount > 0) {
-    const existing = await getBracketPrediction(league_id, user.uid);
-    if (existing?.is_locked) {
-      return NextResponse.json({ error: "Bracket is locked" }, { status: 403 });
-    }
+  if (!isBracketSubmissionOpen()) {
+    return NextResponse.json(
+      {
+        error: `The bracket deadline has passed (${getBracketDeadlineLabel()})`,
+      },
+      { status: 403 }
+    );
+  }
+
+  const existing = await getBracketPrediction(league_id, user.uid);
+  if (existing?.is_locked) {
+    return NextResponse.json(
+      { error: "Your bracket is locked and cannot be changed" },
+      { status: 403 }
+    );
   }
 
   const bracket = await upsertBracketPrediction(league_id, user.uid, bracketData);
-  return NextResponse.json({ bracket });
+  return NextResponse.json({
+    bracket,
+    submission_open: isBracketSubmissionOpen(),
+    deadline_label: getBracketDeadlineLabel(),
+  });
 }
 
 export async function GET(request: NextRequest) {
@@ -61,5 +77,9 @@ export async function GET(request: NextRequest) {
   }
 
   const bracket = await getBracketPrediction(leagueId, user.uid);
-  return NextResponse.json({ bracket });
+  return NextResponse.json({
+    bracket,
+    submission_open: isBracketSubmissionOpen(),
+    deadline_label: getBracketDeadlineLabel(),
+  });
 }

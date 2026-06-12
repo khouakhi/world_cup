@@ -18,6 +18,7 @@ interface TeamPickerProps {
   onSelect: (team: TeamOption) => void;
   compact?: boolean;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export function TeamPicker({
@@ -27,6 +28,7 @@ export function TeamPicker({
   onSelect,
   compact = false,
   placeholder = "Select team…",
+  disabled = false,
 }: TeamPickerProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -62,8 +64,12 @@ export function TeamPicker({
 
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="input flex w-full items-center justify-between gap-2 text-left"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((v) => !v)}
+        className={cn(
+          "input flex w-full items-center justify-between gap-2 text-left",
+          disabled && "cursor-not-allowed opacity-60"
+        )}
         aria-expanded={open}
         aria-haspopup="listbox"
       >
