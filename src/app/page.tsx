@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getAuthUserFromRequest } from "@/lib/firebase/auth";
 import {
   Trophy,
   Target,
@@ -17,7 +18,13 @@ import { ScoringHelpBox } from "@/components/ScoringHelpBox";
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1920&q=80";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await getAuthUserFromRequest();
+  const appHref = user ? "/dashboard" : "/auth";
+  const headerLabel = user ? "My league" : "Sign in";
+  const primaryCta = user ? "Go to my league" : "Join the league";
+  const secondaryCta = user ? "View matches" : "I have an account";
+
   return (
     <main className="min-h-screen overflow-x-hidden">
       {/* Hero */}
@@ -42,10 +49,10 @@ export default function HomePage() {
               <span className="font-bold tracking-tight">World Cup Predictions</span>
             </div>
             <Link
-              href="/auth"
+              href={appHref}
               className="hidden rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-sm transition hover:bg-white/20 sm:inline-flex"
             >
-              Sign in
+              {headerLabel}
             </Link>
           </header>
 
@@ -75,14 +82,14 @@ export default function HomePage() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
-                href="/auth"
+                href={appHref}
                 className="btn-primary group px-8 py-3.5 text-lg shadow-lg shadow-gold-500/20"
               >
-                Join the league
+                {primaryCta}
                 <ChevronRight className="ml-1 h-5 w-5 transition group-hover:translate-x-0.5" />
               </Link>
-              <Link href="/auth" className="btn-secondary px-8 py-3.5 text-lg">
-                I have an account
+              <Link href={appHref} className="btn-secondary px-8 py-3.5 text-lg">
+                {secondaryCta}
               </Link>
             </div>
 
@@ -198,10 +205,12 @@ export default function HomePage() {
           <Trophy className="mb-4 h-12 w-12 text-gold-400" />
           <h2 className="mb-3 text-2xl font-bold md:text-3xl">Ready for kick-off?</h2>
           <p className="mb-8 max-w-lg text-white/65">
-            Create your account and join the World Cup 2026 league today.
+            {user
+              ? "You are signed in — head straight to your matches and predictions."
+              : "Create your account and join the World Cup 2026 league today."}
           </p>
-          <Link href="/auth" className="btn-primary px-10 py-3.5 text-lg">
-            Get started (it&apos;s free)
+          <Link href={appHref} className="btn-primary px-10 py-3.5 text-lg">
+            {user ? "Open my league" : "Get started (it's free)"}
           </Link>
         </div>
       </section>

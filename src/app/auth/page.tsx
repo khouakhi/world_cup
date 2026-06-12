@@ -1,35 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trophy } from "lucide-react";
 import {
+  browserLocalPersistence,
   createUserWithEmailAndPassword,
+  setPersistence,
   signInWithEmailAndPassword,
   updateProfile,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
+import { refreshServerSession } from "@/lib/firebase/session-client";
 
 async function createSession(idToken: string, displayName?: string) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 25_000);
 
   try {
-    const res = await fetch("/api/auth/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken, displayName }),
-      signal: controller.signal,
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(
-        (data as { error?: string }).error ?? "Could not create session"
-      );
-    }
+    await refreshServerSession(idToken, displayName, controller.signal);
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
       throw new Error("Sign-in timed out. Check your connection and try again.");
@@ -49,12 +39,19 @@ export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    fetch("/api/auth/me").then((res) => {
+      if (res.ok) router.replace("/dashboard");
+    });
+  }, [router]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
     const auth = getFirebaseAuth();
+    await setPersistence(auth, browserLocalPersistence);
 
     try {
       if (isSignUp) {
