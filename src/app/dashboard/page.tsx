@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { Copy, Check, Plus } from "lucide-react";
 import { isLeagueAdmin } from "@/lib/constants";
-import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
+import {
+  apiFetch,
+  ensureServerSession,
+  isFirebaseSignedIn,
+} from "@/lib/api-client";
 import type { League } from "@/types";
 
 export default function DashboardPage() {
@@ -22,11 +26,33 @@ export default function DashboardPage() {
     initDashboard();
   }, []);
 
+  async function joinMainLeague(): Promise<League | null> {
+    const joinRes = await apiFetch("/api/leagues", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "auto_join_main" }),
+    });
+    const joinData = await joinRes.json();
+    if (joinRes.ok && joinData.league) {
+      return joinData.league as League;
+    }
+    return null;
+  }
+
   async function initDashboard() {
+    setLoading(true);
+    setError("");
+
     const signedIn = await isFirebaseSignedIn();
     if (!signedIn) {
       router.replace("/auth");
       return;
+    }
+
+    try {
+      await ensureServerSession();
+    } catch {
+      // Bearer token auth still works.
     }
 
     const meRes = await apiFetch("/api/auth/me");
@@ -39,9 +65,26 @@ export default function DashboardPage() {
     const admin = isLeagueAdmin(userEmail);
     setIsAdmin(admin);
 
-    const leaguesRes = await apiFetch("/api/leagues");
+    if (!admin) {
+      const joined = await joinMainLeague();
+      if (joined) {
+        router.replace(`/league/${joined.id}`);
+        return;
+      }
+    }
+
+    let leaguesRes = await apiFetch("/api/leagues");
     if (!leaguesRes.ok) {
-      setError("Could not load your league. Pull down to refresh or try again.");
+      try {
+        await ensureServerSession();
+      } catch {
+        // Ignore and retry below.
+      }
+      leaguesRes = await apiFetch("/api/leagues");
+    }
+
+    if (!leaguesRes.ok) {
+      setError("Could not load your league. Tap retry below.");
       setLoading(false);
       return;
     }
@@ -50,22 +93,13 @@ export default function DashboardPage() {
     const userLeagues: League[] = leaguesData.leagues ?? [];
 
     if (!admin) {
-      if (userLeagues.length === 0) {
-        const joinRes = await apiFetch("/api/leagues", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "auto_join_main" }),
-        });
-        const joinData = await joinRes.json();
-        if (joinRes.ok && joinData.league) {
-          router.replace(`/league/${joinData.league.id}`);
-          return;
-        }
-        setError(joinData.error ?? "Could not join the league");
-      } else {
+      if (userLeagues.length > 0) {
         router.replace(`/league/${userLeagues[0].id}`);
         return;
       }
+      setError("Could not join the league. Tap retry below.");
+      setLoading(false);
+      return;
     }
 
     setLeagues(userLeagues);
@@ -166,7 +200,18 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+        {error && (
+          <div className="mt-4 space-y-3">
+            <p className="text-sm text-red-400">{error}</p>
+            <button
+              type="button"
+              onClick={() => initDashboard()}
+              className="btn-secondary w-full"
+            >
+              Retry
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );

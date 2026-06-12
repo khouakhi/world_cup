@@ -8,38 +8,44 @@ export interface AuthUser {
   name?: string;
 }
 
+function getBearerToken(request?: NextRequest): string | null {
+  const authHeader =
+    request?.headers.get("authorization") ??
+    request?.headers.get("x-firebase-token");
+
+  if (!authHeader) return null;
+  return authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+}
+
 export async function getAuthUserFromRequest(
   request?: NextRequest
 ): Promise<AuthUser | null> {
-  const sessionCookie =
-    request?.cookies.get(SESSION_COOKIE_NAME)?.value ??
-    (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  const bearerToken = getBearerToken(request);
 
-  if (sessionCookie) {
+  if (bearerToken) {
     try {
-      const decoded = await getAdminAuth().verifySessionCookie(
-        sessionCookie,
-        true
-      );
+      const decoded = await getAdminAuth().verifyIdToken(bearerToken, true);
       return {
         uid: decoded.uid,
         email: decoded.email,
         name: decoded.name,
       };
     } catch {
-      // Session cookie invalid — try Bearer token below.
+      // Fall through to session cookie below.
     }
   }
 
-  const authHeader = request?.headers.get("authorization");
-  const bearerToken = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice(7)
-    : null;
+  const sessionCookie =
+    request?.cookies.get(SESSION_COOKIE_NAME)?.value ??
+    (await cookies()).get(SESSION_COOKIE_NAME)?.value;
 
-  if (!bearerToken) return null;
+  if (!sessionCookie) return null;
 
   try {
-    const decoded = await getAdminAuth().verifyIdToken(bearerToken);
+    const decoded = await getAdminAuth().verifySessionCookie(
+      sessionCookie,
+      true
+    );
     return {
       uid: decoded.uid,
       email: decoded.email,

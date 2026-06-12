@@ -1,6 +1,7 @@
 "use client";
 
 import { getFirebaseAuth } from "@/lib/firebase/client";
+import { refreshServerSession } from "@/lib/firebase/session-client";
 
 /** Wait until Firebase has restored persisted auth (avoids false "signed out" on mobile). */
 export async function getFirebaseUser() {
@@ -9,7 +10,19 @@ export async function getFirebaseUser() {
   return auth.currentUser;
 }
 
-/** Authenticated fetch — sends session cookie and a fresh Firebase ID token. */
+async function attachAuthHeaders(
+  headers: Headers,
+  forceRefresh: boolean
+): Promise<void> {
+  const user = await getFirebaseUser();
+  if (!user) return;
+
+  const token = await user.getIdToken(forceRefresh);
+  headers.set("Authorization", `Bearer ${token}`);
+  headers.set("X-Firebase-Token", token);
+}
+
+/** Authenticated fetch — sends a fresh Firebase ID token on every request. */
 export async function apiFetch(
   input: RequestInfo | URL,
   init?: RequestInit
@@ -17,11 +30,7 @@ export async function apiFetch(
   const headers = new Headers(init?.headers);
 
   try {
-    const user = await getFirebaseUser();
-    if (user) {
-      const token = await user.getIdToken();
-      headers.set("Authorization", `Bearer ${token}`);
-    }
+    await attachAuthHeaders(headers, true);
   } catch {
     // Cookie-only session may still work.
   }
@@ -34,19 +43,13 @@ export async function apiFetch(
 
   if (res.status === 401) {
     try {
-      const user = await getFirebaseUser();
-      if (user) {
-        const freshHeaders = new Headers(init?.headers);
-        freshHeaders.set(
-          "Authorization",
-          `Bearer ${await user.getIdToken(true)}`
-        );
-        res = await fetch(input, {
-          ...init,
-          headers: freshHeaders,
-          credentials: "include",
-        });
-      }
+      const freshHeaders = new Headers(init?.headers);
+      await attachAuthHeaders(freshHeaders, true);
+      res = await fetch(input, {
+        ...init,
+        headers: freshHeaders,
+        credentials: "include",
+      });
     } catch {
       // Return the original 401 response.
     }
@@ -58,4 +61,13 @@ export async function apiFetch(
 /** True when Firebase has a signed-in user in this browser session. */
 export async function isFirebaseSignedIn(): Promise<boolean> {
   return (await getFirebaseUser()) !== null;
+}
+
+/** Establish a server session cookie — call once after sign-in. */
+export async function ensureServerSession(): Promise<void> {
+  const user = await getFirebaseUser();
+  if (!user) return;
+
+  const token = await user.getIdToken(true);
+  await refreshServerSession(token);
 }

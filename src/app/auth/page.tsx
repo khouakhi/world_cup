@@ -12,7 +12,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-import { isFirebaseSignedIn } from "@/lib/api-client";
+import { ensureServerSession, isFirebaseSignedIn } from "@/lib/api-client";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -51,6 +51,12 @@ export default function AuthPage() {
         await updateProfile(cred.user, { displayName });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
+      }
+
+      try {
+        await ensureServerSession();
+      } catch {
+        // API calls can still use the Firebase ID token directly.
       }
 
       router.replace("/dashboard");
