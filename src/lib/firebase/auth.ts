@@ -51,4 +51,4 @@ export async function getAuthUserFromRequest(
 }
 
 export const SESSION_COOKIE_NAME = "session";
-export const SESSION_MAX_AGE_MS = 60 * 60 * 24 * 14 * 1000; // 14 days (Firebase max)
+export const SESSION_MAX_AGE_MS = 60 * 60 * 24 * 13 * 1000; // 13 days (under Firebase 14-day max)

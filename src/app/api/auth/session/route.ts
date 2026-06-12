@@ -14,18 +14,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing idToken" }, { status: 400 });
     }
 
+    // Verify before createSessionCookie — that call revokes the ID token.
+    const decoded = await getAdminAuth().verifyIdToken(idToken);
+
     const sessionCookie = await getAdminAuth().createSessionCookie(idToken, {
       expiresIn: SESSION_MAX_AGE_MS,
     });
 
-    const decoded = await getAdminAuth().verifyIdToken(idToken);
-
-    if (displayName) {
-      await upsertProfile(decoded.uid, displayName);
-    } else if (decoded.name) {
-      await upsertProfile(decoded.uid, decoded.name);
-    } else if (decoded.email) {
-      await upsertProfile(decoded.uid, decoded.email.split("@")[0]);
+    try {
+      if (displayName) {
+        await upsertProfile(decoded.uid, displayName);
+      } else if (decoded.name) {
+        await upsertProfile(decoded.uid, decoded.name);
+      } else if (decoded.email) {
+        await upsertProfile(decoded.uid, decoded.email.split("@")[0]);
+      }
+    } catch (profileError) {
+      console.error("Profile upsert failed during sign-in:", profileError);
     }
 
     const response = NextResponse.json({ ok: true });

@@ -68,11 +68,19 @@ export default function AuthPage() {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName });
         const idToken = await cred.user.getIdToken(true);
-        await createSession(idToken, displayName);
+        try {
+          await createSession(idToken, displayName);
+        } catch {
+          // Session cookie may already exist from a concurrent refresh.
+        }
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, password);
         const idToken = await cred.user.getIdToken(true);
-        await createSession(idToken);
+        try {
+          await createSession(idToken);
+        } catch {
+          // Session cookie may already exist from a concurrent refresh.
+        }
       }
 
       await auth.authStateReady();

@@ -16,6 +16,8 @@ export function AuthSessionProvider({
   const refreshing = useRef(false);
 
   useEffect(() => {
+    if (window.location.pathname.startsWith("/auth")) return;
+
     const auth = getFirebaseAuth();
 
     void auth.authStateReady().then(async () => {
