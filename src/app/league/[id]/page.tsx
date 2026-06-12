@@ -13,7 +13,7 @@ import type {
 } from "@/types";
 import { ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { ScoringHelpBox } from "@/components/ScoringHelpBox";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 
 type MatchWithPreview = Match & {
   preview?: { preview_text: string; fun_fact: string | null } | null;
@@ -34,11 +34,12 @@ export default function LeaguePage() {
   const [copied, setCopied] = useState(false);
 
   const loadData = useCallback(async () => {
-    const leaguesRes = await apiFetch("/api/leagues");
-    if (leaguesRes.status === 401) {
-      router.push("/auth");
+    if (!(await isFirebaseSignedIn())) {
+      router.replace("/auth");
       return;
     }
+
+    const leaguesRes = await apiFetch("/api/leagues");
     const leaguesData = await leaguesRes.json();
     const current = leaguesData.leagues?.find((l: League) => l.id === leagueId);
     setLeague(current ?? null);

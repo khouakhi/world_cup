@@ -6,8 +6,8 @@ import { getFirebaseAuth } from "@/lib/firebase/client";
 import { refreshServerSession } from "@/lib/firebase/session-client";
 
 /**
- * Keeps the server session cookie in sync with Firebase's persisted client auth
- * so users stay signed in across visits without re-entering credentials.
+ * Background session cookie refresh — never blocks sign-in.
+ * Runs a few seconds after auth is detected so it does not race with login.
  */
 export function AuthSessionProvider({
   children,
@@ -17,15 +17,18 @@ export function AuthSessionProvider({
   useEffect(() => {
     const auth = getFirebaseAuth();
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user || window.location.pathname.startsWith("/auth")) return;
 
-      try {
-        const idToken = await user.getIdToken();
-        await refreshServerSession(idToken);
-      } catch {
-        // Bearer token auth still works if the cookie refresh fails.
-      }
+      window.setTimeout(async () => {
+        if (!auth.currentUser) return;
+        try {
+          const idToken = await auth.currentUser.getIdToken(true);
+          await refreshServerSession(idToken);
+        } catch {
+          // Bearer token auth still works without the cookie.
+        }
+      }, 4000);
     });
 
     return () => unsubscribe();

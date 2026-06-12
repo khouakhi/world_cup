@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { BadgeGrid } from "@/components/BadgeGrid";
 import { BADGE_LABELS, type Badge, type League } from "@/types";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 
 export default function BadgesPage() {
   const params = useParams();
@@ -18,9 +18,8 @@ export default function BadgesPage() {
 
   useEffect(() => {
     async function load() {
-      const meRes = await apiFetch("/api/auth/me");
-      if (!meRes.ok) {
-        router.push("/auth");
+      if (!(await isFirebaseSignedIn())) {
+        router.replace("/auth");
         return;
       }
 

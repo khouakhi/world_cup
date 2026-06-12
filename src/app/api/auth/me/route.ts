@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
-  const profile = await getProfile(user.uid);
+  const profile = await getProfile(user.uid).catch(() => null);
   return NextResponse.json({
     user: {
       uid: user.uid,

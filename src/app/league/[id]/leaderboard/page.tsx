@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { Podium, LeaderboardTable } from "@/components/Leaderboard";
 import type { League, LeaderboardEntry } from "@/types";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 
 export default function LeaderboardPage() {
   const params = useParams();
@@ -18,13 +18,16 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     async function load() {
-      const meRes = await apiFetch("/api/auth/me");
-      if (!meRes.ok) {
-        router.push("/auth");
+      if (!(await isFirebaseSignedIn())) {
+        router.replace("/auth");
         return;
       }
-      const meData = await meRes.json();
-      setUserId(meData.user.uid);
+
+      const meRes = await apiFetch("/api/auth/me");
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        setUserId(meData.user.uid);
+      }
 
       const leaguesRes = await apiFetch("/api/leagues");
       const leaguesData = await leaguesRes.json();

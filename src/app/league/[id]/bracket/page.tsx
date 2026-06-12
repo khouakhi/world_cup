@@ -12,7 +12,7 @@ import {
   getBracketDeadlineLabel,
   isBracketSubmissionOpen,
 } from "@/lib/bracket-deadline";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 
 export default function BracketPage() {
   const params = useParams();
@@ -33,11 +33,12 @@ export default function BracketPage() {
 
   useEffect(() => {
     async function load() {
-      const leaguesRes = await apiFetch("/api/leagues");
-      if (leaguesRes.status === 401) {
-        router.push("/auth");
+      if (!(await isFirebaseSignedIn())) {
+        router.replace("/auth");
         return;
       }
+
+      const leaguesRes = await apiFetch("/api/leagues");
       const leaguesData = await leaguesRes.json();
       setLeague(
         leaguesData.leagues?.find((l: League) => l.id === leagueId) ?? null

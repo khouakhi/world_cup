@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { Copy, Check, Plus } from "lucide-react";
 import { isLeagueAdmin } from "@/lib/constants";
-import { apiFetch } from "@/lib/api-client";
-import { getFirebaseAuth } from "@/lib/firebase/client";
-import { refreshServerSession } from "@/lib/firebase/session-client";
+import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 import type { League } from "@/types";
 
 export default function DashboardPage() {
@@ -25,34 +23,31 @@ export default function DashboardPage() {
   }, []);
 
   async function initDashboard() {
-    const auth = getFirebaseAuth();
-    await auth.authStateReady();
-
-    if (auth.currentUser) {
-      try {
-        const idToken = await auth.currentUser.getIdToken(true);
-        await refreshServerSession(idToken);
-      } catch {
-        // Bearer auth still works below.
-      }
+    const signedIn = await isFirebaseSignedIn();
+    if (!signedIn) {
+      router.replace("/auth");
+      return;
     }
 
     const meRes = await apiFetch("/api/auth/me");
-    if (!meRes.ok) {
-      router.push("/auth");
-      return;
+    let userEmail: string | undefined;
+    if (meRes.ok) {
+      const meData = await meRes.json();
+      userEmail = meData.user?.email;
     }
-    const meData = await meRes.json();
-    const admin = isLeagueAdmin(meData.user?.email);
+
+    const admin = isLeagueAdmin(userEmail);
     setIsAdmin(admin);
 
     const leaguesRes = await apiFetch("/api/leagues");
     if (!leaguesRes.ok) {
-      router.push("/auth");
+      setError("Could not load your league. Pull down to refresh or try again.");
+      setLoading(false);
       return;
     }
+
     const leaguesData = await leaguesRes.json();
-    let userLeagues: League[] = leaguesData.leagues ?? [];
+    const userLeagues: League[] = leaguesData.leagues ?? [];
 
     if (!admin) {
       if (userLeagues.length === 0) {

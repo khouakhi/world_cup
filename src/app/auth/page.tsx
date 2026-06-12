@@ -12,24 +12,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-import { refreshServerSession } from "@/lib/firebase/session-client";
-import { apiFetch } from "@/lib/api-client";
-
-async function createSession(idToken: string, displayName?: string) {
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 25_000);
-
-  try {
-    await refreshServerSession(idToken, displayName, controller.signal);
-  } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new Error("Sign-in timed out. Check your connection and try again.");
-    }
-    throw err;
-  } finally {
-    window.clearTimeout(timeout);
-  }
-}
+import { isFirebaseSignedIn } from "@/lib/api-client";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -43,12 +26,11 @@ export default function AuthPage() {
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
-      const res = await apiFetch("/api/auth/me");
-      if (!cancelled && res.ok) {
+    isFirebaseSignedIn().then((signedIn) => {
+      if (!cancelled && signedIn) {
         router.replace("/dashboard");
       }
-    })();
+    });
 
     return () => {
       cancelled = true;
@@ -67,24 +49,11 @@ export default function AuthPage() {
       if (isSignUp) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName });
-        try {
-          const idToken = await cred.user.getIdToken(true);
-          await createSession(idToken, displayName);
-        } catch {
-          // Bearer auth still works; session cookie is refreshed on the next page.
-        }
       } else {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        try {
-          const idToken = await cred.user.getIdToken(true);
-          await createSession(idToken);
-        } catch {
-          // Bearer auth still works; session cookie is refreshed on the next page.
-        }
+        await signInWithEmailAndPassword(auth, email, password);
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      router.replace("/dashboard");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       if (msg.includes("auth/invalid-credential")) {
