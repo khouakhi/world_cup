@@ -7,7 +7,6 @@ import { TeamPicker, type TeamOption } from "@/components/TeamPicker";
 import type { League, BracketPrediction } from "@/types";
 import { BRACKET_POINTS } from "@/types";
 import { Clock, Crown, Lock } from "lucide-react";
-import { MobileNav } from "@/components/MobileNav";
 import {
   formatBracketDeadlineCountdown,
   getBracketDeadlineLabel,
@@ -147,7 +146,7 @@ export default function BracketPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen">
       <Nav leagueName={league?.name} leagueId={leagueId} />
       <main className="mx-auto max-w-2xl px-4 py-6">
         <h1 className="mb-2 flex items-center gap-2 text-2xl font-bold">
@@ -255,7 +254,6 @@ export default function BracketPage() {
           )}
         </form>
       </main>
-      <MobileNav leagueId={leagueId} />
     </div>
   );
 }

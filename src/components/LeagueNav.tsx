@@ -61,10 +61,10 @@ export function LeagueNavMobile({ leagueId }: { leagueId: string }) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#0f172a]/95 backdrop-blur-lg md:hidden"
+      className="border-t border-white/10 bg-[#0f172a]/95 md:hidden"
       aria-label="League sections"
     >
-      <div className="mx-auto flex max-w-lg justify-around px-2 py-2">
+      <div className="mx-auto flex max-w-5xl justify-around px-1 py-1">
         {LEAGUE_NAV_LINKS.map(({ suffix, label, shortLabel, icon: Icon }) => {
           const href = leagueHref(leagueId, suffix);
           const active = isLinkActive(pathname, leagueId, suffix);
@@ -74,19 +74,19 @@ export function LeagueNavMobile({ leagueId }: { leagueId: string }) {
               key={suffix}
               href={href}
               className={cn(
-                "flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition",
+                "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 transition",
                 active ? "text-gold-400" : "text-white/50 hover:text-white/80"
               )}
             >
               <span
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl transition",
+                  "flex h-8 w-8 items-center justify-center rounded-lg transition",
                   active ? "bg-gold-500/15 ring-1 ring-gold-400/30" : "bg-transparent"
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-4 w-4" />
               </span>
-              <span className="text-[11px] font-medium leading-none">
+              <span className="text-[10px] font-medium leading-none">
                 {shortLabel ?? label}
               </span>
             </Link>

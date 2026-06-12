@@ -5,7 +5,7 @@ import { Trophy, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-import { LeagueNavDesktop } from "@/components/LeagueNav";
+import { LeagueNavDesktop, LeagueNavMobile } from "@/components/LeagueNav";
 
 interface NavProps {
   leagueName?: string;
@@ -50,6 +50,8 @@ export function Nav({ leagueName, leagueId }: NavProps) {
           <span className="hidden sm:inline">Sign out</span>
         </button>
       </div>
+
+      {leagueId && <LeagueNavMobile leagueId={leagueId} />}
     </header>
   );
 }

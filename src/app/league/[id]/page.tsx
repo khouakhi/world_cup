@@ -12,7 +12,6 @@ import type {
   MatchdayLeaderboardEntry,
 } from "@/types";
 import { ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
-import { MobileNav } from "@/components/MobileNav";
 import { ScoringHelpBox } from "@/components/ScoringHelpBox";
 import { apiFetch } from "@/lib/api-client";
 
@@ -132,7 +131,7 @@ export default function LeaguePage() {
   const dayIndex = matchdays.indexOf(selectedDay);
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen">
       <Nav leagueName={league?.name} leagueId={leagueId} />
       <main className="mx-auto max-w-2xl px-4 py-6">
         {league && (
@@ -208,7 +207,6 @@ export default function LeaguePage() {
           )}
         </div>
       </main>
-      <MobileNav leagueId={leagueId} />
     </div>
   );
 }

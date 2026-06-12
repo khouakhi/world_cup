@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { Podium, LeaderboardTable } from "@/components/Leaderboard";
-import { MobileNav } from "@/components/MobileNav";
 import type { League, LeaderboardEntry } from "@/types";
 import { apiFetch } from "@/lib/api-client";
 
@@ -41,7 +40,7 @@ export default function LeaderboardPage() {
   }, [leagueId, router]);
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen">
       <Nav leagueName={league?.name} leagueId={leagueId} />
       <main className="mx-auto max-w-2xl px-4 py-6">
         <h1 className="mb-6 text-2xl font-bold">Leaderboard</h1>
@@ -52,7 +51,6 @@ export default function LeaderboardPage() {
 
         <LeaderboardTable entries={entries} highlightUserId={userId ?? undefined} />
       </main>
-      <MobileNav leagueId={leagueId} />
     </div>
   );
 }
