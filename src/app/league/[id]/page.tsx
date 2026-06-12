@@ -83,7 +83,7 @@ export default function LeaguePage() {
   }, [loadData]);
 
   async function handlePredict(matchId: string, home: number, away: number) {
-    await fetch("/api/predictions", {
+    const res = await fetch("/api/predictions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -93,7 +93,19 @@ export default function LeaguePage() {
         away_score: away,
       }),
     });
-    await loadData();
+
+    if (res.ok) {
+      const data = await res.json();
+      setPredictions((prev) => {
+        const index = prev.findIndex((p) => p.match_id === matchId);
+        if (index >= 0) {
+          const next = [...prev];
+          next[index] = data.prediction;
+          return next;
+        }
+        return [...prev, data.prediction];
+      });
+    }
   }
 
   async function handleCaptainPick(matchId: string) {

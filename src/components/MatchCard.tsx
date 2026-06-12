@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Star, Lock } from "lucide-react";
 import type { Match, Prediction } from "@/types";
@@ -24,8 +24,16 @@ export function MatchCard({
 }: MatchCardProps) {
   const [home, setHome] = useState(prediction?.home_score ?? 0);
   const [away, setAway] = useState(prediction?.away_score ?? 0);
+  const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!dirty) {
+      setHome(prediction?.home_score ?? 0);
+      setAway(prediction?.away_score ?? 0);
+    }
+  }, [prediction?.home_score, prediction?.away_score, match.id, dirty]);
 
   const open = isMatchOpen(match.kickoff_at, match.is_locked);
   const live = isLiveStatus(match.status);
@@ -35,6 +43,7 @@ export function MatchCard({
     setSaving(true);
     try {
       await onPredict(match.id, home, away);
+      setDirty(false);
     } finally {
       setSaving(false);
     }
@@ -77,9 +86,21 @@ export function MatchCard({
             </div>
           ) : open ? (
             <div className="flex items-center gap-2">
-              <ScoreInput value={home} onChange={setHome} />
+              <ScoreInput
+                value={home}
+                onChange={(v) => {
+                  setDirty(true);
+                  setHome(v);
+                }}
+              />
               <span className="text-white/40">–</span>
-              <ScoreInput value={away} onChange={setAway} />
+              <ScoreInput
+                value={away}
+                onChange={(v) => {
+                  setDirty(true);
+                  setAway(v);
+                }}
+              />
             </div>
           ) : (
             <div className="text-lg text-white/60">vs</div>
@@ -90,6 +111,12 @@ export function MatchCard({
         </div>
         <TeamBlock name={match.away_team_name} logo={match.away_team_logo} align="right" />
       </div>
+
+      {prediction && open && !dirty && (
+        <p className="mt-2 text-center text-xs text-gold-400/90">
+          Your pick: {prediction.home_score}–{prediction.away_score}
+        </p>
+      )}
 
       {prediction && finished && prediction.points_awarded !== null && (
         <div className="mt-3 text-center text-sm">
