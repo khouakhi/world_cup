@@ -67,26 +67,20 @@ export default function AuthPage() {
       if (isSignUp) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName });
-        const idToken = await cred.user.getIdToken(true);
         try {
+          const idToken = await cred.user.getIdToken(true);
           await createSession(idToken, displayName);
         } catch {
-          // Session cookie may already exist from a concurrent refresh.
+          // Bearer auth still works; session cookie is refreshed on the next page.
         }
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, password);
-        const idToken = await cred.user.getIdToken(true);
         try {
+          const idToken = await cred.user.getIdToken(true);
           await createSession(idToken);
         } catch {
-          // Session cookie may already exist from a concurrent refresh.
+          // Bearer auth still works; session cookie is refreshed on the next page.
         }
-      }
-
-      await auth.authStateReady();
-      const check = await apiFetch("/api/auth/me");
-      if (!check.ok) {
-        throw new Error("Sign-in could not be confirmed. Please try again.");
       }
 
       router.push("/dashboard");

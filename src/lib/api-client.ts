@@ -14,20 +14,35 @@ export async function apiFetch(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
-  const headers = new Headers(init?.headers);
-
-  try {
+  async function request(forceRefresh: boolean) {
+    const headers = new Headers(init?.headers);
     const user = await getFirebaseUser();
+
     if (user) {
-      headers.set("Authorization", `Bearer ${await user.getIdToken()}`);
+      const token = await user.getIdToken(forceRefresh);
+      headers.set("Authorization", `Bearer ${token}`);
     }
-  } catch {
-    // Cookie-only session may still work.
+
+    return fetch(input, {
+      ...init,
+      headers,
+      credentials: "include",
+    });
   }
 
-  return fetch(input, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
+  try {
+    let res = await request(false);
+
+    // createSessionCookie revokes the cached ID token — fetch a fresh one and retry.
+    if (res.status === 401) {
+      const user = await getFirebaseUser();
+      if (user) {
+        res = await request(true);
+      }
+    }
+
+    return res;
+  } catch {
+    return fetch(input, { ...init, credentials: "include" });
+  }
 }

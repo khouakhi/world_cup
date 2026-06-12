@@ -7,6 +7,7 @@ import { Copy, Check, Plus } from "lucide-react";
 import { isLeagueAdmin } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
 import { getFirebaseAuth } from "@/lib/firebase/client";
+import { refreshServerSession } from "@/lib/firebase/session-client";
 import type { League } from "@/types";
 
 export default function DashboardPage() {
@@ -26,6 +27,15 @@ export default function DashboardPage() {
   async function initDashboard() {
     const auth = getFirebaseAuth();
     await auth.authStateReady();
+
+    if (auth.currentUser) {
+      try {
+        const idToken = await auth.currentUser.getIdToken(true);
+        await refreshServerSession(idToken);
+      } catch {
+        // Bearer auth still works below.
+      }
+    }
 
     const meRes = await apiFetch("/api/auth/me");
     if (!meRes.ok) {
