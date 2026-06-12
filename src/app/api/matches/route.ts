@@ -3,7 +3,7 @@ import { getAuthUserFromRequest } from "@/lib/firebase/auth";
 import { getWc26Teams } from "@/lib/worldcup2026/normalise";
 import { ensureWorldCup2026Seeded } from "@/lib/worldcup2026/seed";
 import {
-  getWorldCupMetadata,
+  ensureWorldCupMetadata,
   pickDefaultMatchday,
 } from "@/lib/worldcup2026/metadata";
 import { listMatches, getMatchPreviews } from "@/lib/db";
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
   await ensureWorldCup2026Seeded();
 
-  const meta = await getWorldCupMetadata();
+  const meta = await ensureWorldCupMetadata();
   const matchdays = meta?.matchdays ?? [];
 
   let statusFilter: string[] | undefined;

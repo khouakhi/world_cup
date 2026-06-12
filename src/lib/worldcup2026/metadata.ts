@@ -55,3 +55,19 @@ export function pickDefaultMatchday(matchdays: string[]): string | undefined {
   const today = new Date().toISOString().split("T")[0];
   return matchdays.find((day) => day >= today) ?? matchdays[0];
 }
+
+/** Backfill matchdays metadata when fixtures exist but system doc is missing. */
+export async function ensureWorldCupMetadata(): Promise<WorldCupMetadata | null> {
+  const existing = await getWorldCupMetadata();
+  if (existing?.matchdays?.length) return existing;
+  if (!(await isWorldCupSeeded())) return null;
+
+  const { listMatchdays } = await import("@/lib/db");
+  const matchdays = await listMatchdays();
+  await saveWorldCupMetadata({
+    seeded: true,
+    fixture_count: 104,
+    matchdays,
+  });
+  return getWorldCupMetadata();
+}
