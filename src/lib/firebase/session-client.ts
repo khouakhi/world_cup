@@ -10,6 +10,7 @@ export async function refreshServerSession(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken, displayName }),
     signal,
+    credentials: "include",
   });
 
   if (!res.ok) {

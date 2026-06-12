@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { Copy, Check, Plus } from "lucide-react";
 import { isLeagueAdmin } from "@/lib/constants";
+import { apiFetch } from "@/lib/api-client";
 import type { League } from "@/types";
 
 export default function DashboardPage() {
@@ -22,8 +23,8 @@ export default function DashboardPage() {
   }, []);
 
   async function initDashboard() {
-    const meRes = await fetch("/api/auth/me");
-    if (meRes.status === 401) {
+    const meRes = await apiFetch("/api/auth/me");
+    if (!meRes.ok) {
       router.push("/auth");
       return;
     }
@@ -31,13 +32,17 @@ export default function DashboardPage() {
     const admin = isLeagueAdmin(meData.user?.email);
     setIsAdmin(admin);
 
-    const leaguesRes = await fetch("/api/leagues");
+    const leaguesRes = await apiFetch("/api/leagues");
+    if (!leaguesRes.ok) {
+      router.push("/auth");
+      return;
+    }
     const leaguesData = await leaguesRes.json();
     let userLeagues: League[] = leaguesData.leagues ?? [];
 
     if (!admin) {
       if (userLeagues.length === 0) {
-        const joinRes = await fetch("/api/leagues", {
+        const joinRes = await apiFetch("/api/leagues", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "auto_join_main" }),
@@ -63,7 +68,7 @@ export default function DashboardPage() {
     setCreating(true);
     setError("");
     try {
-      const res = await fetch("/api/leagues", {
+      const res = await apiFetch("/api/leagues", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", name: newLeagueName }),

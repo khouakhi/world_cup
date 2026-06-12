@@ -14,6 +14,7 @@ import type {
 import { ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { MobileNav } from "@/components/MobileNav";
 import { ScoringHelpBox } from "@/components/ScoringHelpBox";
+import { apiFetch } from "@/lib/api-client";
 
 type MatchWithPreview = Match & {
   preview?: { preview_text: string; fun_fact: string | null } | null;
@@ -34,7 +35,7 @@ export default function LeaguePage() {
   const [copied, setCopied] = useState(false);
 
   const loadData = useCallback(async () => {
-    const leaguesRes = await fetch("/api/leagues");
+    const leaguesRes = await apiFetch("/api/leagues");
     if (leaguesRes.status === 401) {
       router.push("/auth");
       return;
@@ -46,7 +47,7 @@ export default function LeaguePage() {
     const matchParams = selectedDay
       ? `?matchday=${selectedDay}`
       : "?status=upcoming";
-    const matchesRes = await fetch(`/api/matches${matchParams}`);
+    const matchesRes = await apiFetch(`/api/matches${matchParams}`);
     const matchesData = await matchesRes.json();
     setMatches(matchesData.matches ?? []);
     setMatchdays(matchesData.matchdays ?? []);
@@ -57,20 +58,20 @@ export default function LeaguePage() {
       setSelectedDay(upcoming ?? matchesData.matchdays[0]);
     }
 
-    const predsRes = await fetch(`/api/predictions?league_id=${leagueId}`);
+    const predsRes = await apiFetch(`/api/predictions?league_id=${leagueId}`);
     const predsData = await predsRes.json();
     setPredictions(predsData.predictions ?? []);
 
     const day = selectedDay || matchesData.matchdays?.[0];
     if (day) {
-      const capRes = await fetch(
+      const capRes = await apiFetch(
         `/api/captain?league_id=${leagueId}&matchday=${day}`
       );
       const capData = await capRes.json();
       setCaptainMatchId(capData.captain_pick?.match_id ?? null);
     }
 
-    const lbRes = await fetch(
+    const lbRes = await apiFetch(
       `/api/leaderboard?league_id=${leagueId}${day ? `&matchday=${day}` : ""}`
     );
     const lbData = await lbRes.json();
@@ -83,7 +84,7 @@ export default function LeaguePage() {
   }, [loadData]);
 
   async function handlePredict(matchId: string, home: number, away: number) {
-    const res = await fetch("/api/predictions", {
+    const res = await apiFetch("/api/predictions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -109,7 +110,7 @@ export default function LeaguePage() {
   }
 
   async function handleCaptainPick(matchId: string) {
-    await fetch("/api/captain", {
+    await apiFetch("/api/captain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

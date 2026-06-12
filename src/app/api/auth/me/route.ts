@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserFromRequest } from "@/lib/firebase/auth";
 import { getProfile } from "@/lib/db";
 
-export async function GET() {
-  const user = await getAuthUserFromRequest();
+export async function GET(request: NextRequest) {
+  const user = await getAuthUserFromRequest(request);
   if (!user) {
-    return NextResponse.json({ user: null });
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
   const profile = await getProfile(user.uid);

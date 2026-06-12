@@ -6,6 +6,7 @@ import { Nav } from "@/components/Nav";
 import { BadgeGrid } from "@/components/BadgeGrid";
 import { MobileNav } from "@/components/MobileNav";
 import { BADGE_LABELS, type Badge, type League } from "@/types";
+import { apiFetch } from "@/lib/api-client";
 
 export default function BadgesPage() {
   const params = useParams();
@@ -18,20 +19,19 @@ export default function BadgesPage() {
 
   useEffect(() => {
     async function load() {
-      const meRes = await fetch("/api/auth/me");
-      const meData = await meRes.json();
-      if (!meData.user) {
+      const meRes = await apiFetch("/api/auth/me");
+      if (!meRes.ok) {
         router.push("/auth");
         return;
       }
 
-      const leaguesRes = await fetch("/api/leagues");
+      const leaguesRes = await apiFetch("/api/leagues");
       const leaguesData = await leaguesRes.json();
       setLeague(
         leaguesData.leagues?.find((l: League) => l.id === leagueId) ?? null
       );
 
-      const badgesRes = await fetch(`/api/badges?league_id=${leagueId}`);
+      const badgesRes = await apiFetch(`/api/badges?league_id=${leagueId}`);
       const badgesData = await badgesRes.json();
       setBadges(badgesData.badges ?? []);
 

@@ -13,6 +13,7 @@ import {
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { refreshServerSession } from "@/lib/firebase/session-client";
+import { apiFetch } from "@/lib/api-client";
 
 async function createSession(idToken: string, displayName?: string) {
   const controller = new AbortController();
@@ -40,7 +41,7 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/auth/me").then((res) => {
+    apiFetch("/api/auth/me").then(async (res) => {
       if (res.ok) router.replace("/dashboard");
     });
   }, [router]);

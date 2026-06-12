@@ -13,6 +13,7 @@ import {
   getBracketDeadlineLabel,
   isBracketSubmissionOpen,
 } from "@/lib/bracket-deadline";
+import { apiFetch } from "@/lib/api-client";
 
 export default function BracketPage() {
   const params = useParams();
@@ -33,7 +34,7 @@ export default function BracketPage() {
 
   useEffect(() => {
     async function load() {
-      const leaguesRes = await fetch("/api/leagues");
+      const leaguesRes = await apiFetch("/api/leagues");
       if (leaguesRes.status === 401) {
         router.push("/auth");
         return;
@@ -45,7 +46,7 @@ export default function BracketPage() {
 
       setTeamsLoading(true);
       setTeamsError("");
-      const teamsRes = await fetch("/api/matches", { method: "POST" });
+      const teamsRes = await apiFetch("/api/matches", { method: "POST" });
       const teamsData = await teamsRes.json();
       if (!teamsRes.ok) {
         setTeamsError(teamsData.error ?? "Could not load teams");
@@ -58,7 +59,7 @@ export default function BracketPage() {
       }
       setTeamsLoading(false);
 
-      const bracketRes = await fetch(`/api/bracket?league_id=${leagueId}`);
+      const bracketRes = await apiFetch(`/api/bracket?league_id=${leagueId}`);
       const bracketData = await bracketRes.json();
       if (bracketData.bracket) setBracket(bracketData.bracket);
       if (typeof bracketData.submission_open === "boolean") {
@@ -86,7 +87,7 @@ export default function BracketPage() {
     const semiIds = bracket.semi_finalist_ids ?? [];
     const semiNames = bracket.semi_finalist_names ?? [];
 
-    const res = await fetch("/api/bracket", {
+    const res = await apiFetch("/api/bracket", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

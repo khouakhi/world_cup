@@ -16,7 +16,7 @@ export function Nav({ leagueName, leagueId }: NavProps) {
   const router = useRouter();
 
   async function handleSignOut() {
-    await fetch("/api/auth/session", { method: "DELETE" });
+    await fetch("/api/auth/session", { method: "DELETE", credentials: "include" });
     try {
       await signOut(getFirebaseAuth());
     } catch {

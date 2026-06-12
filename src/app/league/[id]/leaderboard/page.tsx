@@ -6,6 +6,7 @@ import { Nav } from "@/components/Nav";
 import { Podium, LeaderboardTable } from "@/components/Leaderboard";
 import { MobileNav } from "@/components/MobileNav";
 import type { League, LeaderboardEntry } from "@/types";
+import { apiFetch } from "@/lib/api-client";
 
 export default function LeaderboardPage() {
   const params = useParams();
@@ -18,21 +19,21 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     async function load() {
-      const meRes = await fetch("/api/auth/me");
-      const meData = await meRes.json();
-      if (!meData.user) {
+      const meRes = await apiFetch("/api/auth/me");
+      if (!meRes.ok) {
         router.push("/auth");
         return;
       }
+      const meData = await meRes.json();
       setUserId(meData.user.uid);
 
-      const leaguesRes = await fetch("/api/leagues");
+      const leaguesRes = await apiFetch("/api/leagues");
       const leaguesData = await leaguesRes.json();
       setLeague(
         leaguesData.leagues?.find((l: League) => l.id === leagueId) ?? null
       );
 
-      const lbRes = await fetch(`/api/leaderboard?league_id=${leagueId}`);
+      const lbRes = await apiFetch(`/api/leaderboard?league_id=${leagueId}`);
       const lbData = await lbRes.json();
       setEntries(lbData.leaderboard ?? []);
     }

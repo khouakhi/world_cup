@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Trophy, Users, Plus } from "lucide-react";
 import type { League } from "@/types";
+import { apiFetch } from "@/lib/api-client";
 
 interface LeagueSelectorProps {
   onCreated: (league: League) => void;
@@ -21,7 +22,7 @@ export function LeagueSelector({ onCreated, onJoined }: LeagueSelectorProps) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/leagues", {
+      const res = await apiFetch("/api/leagues", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "create", name }),
@@ -41,7 +42,7 @@ export function LeagueSelector({ onCreated, onJoined }: LeagueSelectorProps) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/leagues", {
+      const res = await apiFetch("/api/leagues", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "join", invite_code: code.toUpperCase() }),

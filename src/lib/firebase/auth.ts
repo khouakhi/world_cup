@@ -12,13 +12,34 @@ export async function getAuthUserFromRequest(
   request?: NextRequest
 ): Promise<AuthUser | null> {
   const sessionCookie =
-    request?.cookies.get("session")?.value ??
-    (await cookies()).get("session")?.value;
+    request?.cookies.get(SESSION_COOKIE_NAME)?.value ??
+    (await cookies()).get(SESSION_COOKIE_NAME)?.value;
 
-  if (!sessionCookie) return null;
+  if (sessionCookie) {
+    try {
+      const decoded = await getAdminAuth().verifySessionCookie(
+        sessionCookie,
+        true
+      );
+      return {
+        uid: decoded.uid,
+        email: decoded.email,
+        name: decoded.name,
+      };
+    } catch {
+      // Session cookie invalid — try Bearer token below.
+    }
+  }
+
+  const authHeader = request?.headers.get("authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : null;
+
+  if (!bearerToken) return null;
 
   try {
-    const decoded = await getAdminAuth().verifySessionCookie(sessionCookie, true);
+    const decoded = await getAdminAuth().verifyIdToken(bearerToken);
     return {
       uid: decoded.uid,
       email: decoded.email,
