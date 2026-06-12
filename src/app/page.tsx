@@ -63,9 +63,7 @@ export default function HomePage() {
             <h1 className="mb-5 max-w-2xl text-4xl font-extrabold leading-[1.08] tracking-tight md:text-6xl">
               Predict.
               <br />
-              <span className="bg-gradient-to-r from-gold-300 via-gold-400 to-gold-500 bg-clip-text text-transparent">
-                Compete.
-              </span>
+              <span className="text-gold-400">Compete.</span>
               <br />
               Win bragging rights.
             </h1>

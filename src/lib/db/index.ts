@@ -348,6 +348,18 @@ export async function getPredictionsForLeague(
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Prediction);
 }
 
+export async function getPredictionsForUserInLeague(
+  leagueId: string,
+  userId: string
+): Promise<Prediction[]> {
+  const snap = await db()
+    .collection("predictions")
+    .where("league_id", "==", leagueId)
+    .where("user_id", "==", userId)
+    .get();
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Prediction);
+}
+
 export async function getPredictionsForMatch(
   matchId: string
 ): Promise<Prediction[]> {

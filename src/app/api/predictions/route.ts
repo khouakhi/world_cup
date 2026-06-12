@@ -6,7 +6,7 @@ import {
   isLeagueMember,
   getMatch,
   upsertPrediction,
-  getPredictionsForLeague,
+  getPredictionsForUserInLeague,
 } from "@/lib/db";
 
 const schema = z.object({
@@ -66,6 +66,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "league_id required" }, { status: 400 });
   }
 
-  const predictions = await getPredictionsForLeague(leagueId);
+  const predictions = await getPredictionsForUserInLeague(leagueId, user.uid);
   return NextResponse.json({ predictions });
 }
