@@ -1,28 +1,12 @@
 "use client";
 
-import { onAuthStateChanged, type User } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 
-let authInitPromise: Promise<User | null> | null = null;
-
-/** Wait for Firebase to restore persisted auth (needed on mobile PWA cold start). */
-function getFirebaseUser(): Promise<User | null> {
+/** Wait until Firebase has restored persisted auth (avoids false "signed out" on mobile). */
+async function getFirebaseUser() {
   const auth = getFirebaseAuth();
-  if (auth.currentUser) {
-    return Promise.resolve(auth.currentUser);
-  }
-
-  if (!authInitPromise) {
-    authInitPromise = new Promise((resolve) => {
-      const unsub = onAuthStateChanged(auth, (user) => {
-        unsub();
-        authInitPromise = null;
-        resolve(user);
-      });
-    });
-  }
-
-  return authInitPromise;
+  await auth.authStateReady();
+  return auth.currentUser;
 }
 
 /** Authenticated fetch — sends session cookie and Firebase ID token (PWA fallback). */

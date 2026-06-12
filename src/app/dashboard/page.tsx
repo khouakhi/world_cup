@@ -6,6 +6,7 @@ import { Nav } from "@/components/Nav";
 import { Copy, Check, Plus } from "lucide-react";
 import { isLeagueAdmin } from "@/lib/constants";
 import { apiFetch } from "@/lib/api-client";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 import type { League } from "@/types";
 
 export default function DashboardPage() {
@@ -23,6 +24,9 @@ export default function DashboardPage() {
   }, []);
 
   async function initDashboard() {
+    const auth = getFirebaseAuth();
+    await auth.authStateReady();
+
     const meRes = await apiFetch("/api/auth/me");
     if (!meRes.ok) {
       router.push("/auth");

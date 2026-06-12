@@ -41,9 +41,18 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
-    apiFetch("/api/auth/me").then(async (res) => {
-      if (res.ok) router.replace("/dashboard");
-    });
+    let cancelled = false;
+
+    (async () => {
+      const res = await apiFetch("/api/auth/me");
+      if (!cancelled && res.ok) {
+        router.replace("/dashboard");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -58,12 +67,18 @@ export default function AuthPage() {
       if (isSignUp) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName });
-        const idToken = await cred.user.getIdToken();
+        const idToken = await cred.user.getIdToken(true);
         await createSession(idToken, displayName);
       } else {
         const cred = await signInWithEmailAndPassword(auth, email, password);
-        const idToken = await cred.user.getIdToken();
+        const idToken = await cred.user.getIdToken(true);
         await createSession(idToken);
+      }
+
+      await auth.authStateReady();
+      const check = await apiFetch("/api/auth/me");
+      if (!check.ok) {
+        throw new Error("Sign-in could not be confirmed. Please try again.");
       }
 
       router.push("/dashboard");

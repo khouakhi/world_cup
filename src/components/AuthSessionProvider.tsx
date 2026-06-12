@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { useEffect, useRef } from "react";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { refreshServerSession } from "@/lib/firebase/session-client";
 
@@ -14,20 +13,25 @@ export function AuthSessionProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const refreshing = useRef(false);
+
   useEffect(() => {
     const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) return;
 
+    void auth.authStateReady().then(async () => {
+      const user = auth.currentUser;
+      if (!user || refreshing.current) return;
+
+      refreshing.current = true;
       try {
         const idToken = await user.getIdToken();
         await refreshServerSession(idToken);
       } catch {
-        // Cookie may still be valid; user can sign in again if not.
+        // Cookie may still be valid; bearer token auth still works.
+      } finally {
+        refreshing.current = false;
       }
     });
-
-    return () => unsubscribe();
   }, []);
 
   return <>{children}</>;
