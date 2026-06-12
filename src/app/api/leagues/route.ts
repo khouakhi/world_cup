@@ -6,7 +6,9 @@ import {
   getLeagueByInviteCode,
   addLeagueMember,
   getLeaguesForUser,
+  isLeagueMember,
 } from "@/lib/db";
+import { isLeagueAdmin } from "@/lib/constants";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -27,6 +29,13 @@ export async function POST(request: NextRequest) {
   const action = body.action as string;
 
   if (action === "create") {
+    if (!isLeagueAdmin(user.email)) {
+      return NextResponse.json(
+        { error: "Only the league organiser can create leagues" },
+        { status: 403 }
+      );
+    }
+
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -54,7 +63,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid invite code" }, { status: 404 });
     }
 
-    await addLeagueMember(league.id, user.uid);
+    const alreadyMember = await isLeagueMember(league.id, user.uid);
+    if (!alreadyMember) {
+      await addLeagueMember(league.id, user.uid);
+    }
+    return NextResponse.json({ league });
+  }
+
+  if (action === "auto_join_main") {
+    const { getMainLeagueInviteCode } = await import("@/lib/constants");
+    const league = await getLeagueByInviteCode(getMainLeagueInviteCode());
+    if (!league) {
+      return NextResponse.json(
+        { error: "Main league not found. Ask the organiser for help." },
+        { status: 404 }
+      );
+    }
+
+    const alreadyMember = await isLeagueMember(league.id, user.uid);
+    if (!alreadyMember) {
+      await addLeagueMember(league.id, user.uid);
+    }
     return NextResponse.json({ league });
   }
 

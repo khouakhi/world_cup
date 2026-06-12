@@ -15,8 +15,8 @@ const EXAMPLE_ROWS = [
  * Compact scoring explainer shown on the Matches page.
  * Uses a generic Team A vs Team B example (final score 1-1).
  */
-export function ScoringHelpBox() {
-  const [open, setOpen] = useState(false);
+export function ScoringHelpBox({ defaultOpen = false }: { defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
     <div className="card mb-6 overflow-hidden border-gold-400/20 bg-gold-400/5">

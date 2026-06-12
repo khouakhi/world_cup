@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
-import { LeagueSelector } from "@/components/LeagueSelector";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Plus } from "lucide-react";
+import { isLeagueAdmin } from "@/lib/constants";
 import type { League } from "@/types";
 
 export default function DashboardPage() {
@@ -12,24 +12,69 @@ export default function DashboardPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newLeagueName, setNewLeagueName] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchLeagues();
+    initDashboard();
   }, []);
 
-  async function fetchLeagues() {
-    const res = await fetch("/api/leagues");
-    if (res.status === 401) {
+  async function initDashboard() {
+    const meRes = await fetch("/api/auth/me");
+    if (meRes.status === 401) {
       router.push("/auth");
       return;
     }
-    const data = await res.json();
-    setLeagues(data.leagues ?? []);
+    const meData = await meRes.json();
+    const admin = isLeagueAdmin(meData.user?.email);
+    setIsAdmin(admin);
+
+    const leaguesRes = await fetch("/api/leagues");
+    const leaguesData = await leaguesRes.json();
+    let userLeagues: League[] = leaguesData.leagues ?? [];
+
+    if (!admin) {
+      if (userLeagues.length === 0) {
+        const joinRes = await fetch("/api/leagues", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "auto_join_main" }),
+        });
+        const joinData = await joinRes.json();
+        if (joinRes.ok && joinData.league) {
+          router.replace(`/league/${joinData.league.id}`);
+          return;
+        }
+        setError(joinData.error ?? "Could not join the league");
+      } else {
+        router.replace(`/league/${userLeagues[0].id}`);
+        return;
+      }
+    }
+
+    setLeagues(userLeagues);
     setLoading(false);
   }
 
-  function handleLeagueAction(league: League) {
-    router.push(`/league/${league.id}`);
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    setError("");
+    try {
+      const res = await fetch("/api/leagues", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", name: newLeagueName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to create league");
+      router.push(`/league/${data.league.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setCreating(false);
+    }
   }
 
   async function copyCode(code: string) {
@@ -50,7 +95,11 @@ export default function DashboardPage() {
     <div className="min-h-screen">
       <Nav />
       <main className="mx-auto max-w-2xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold">Your leagues</h1>
+        <h1 className="mb-2 text-2xl font-bold">League organiser</h1>
+        <p className="mb-6 text-sm text-white/60">
+          Manage your World Cup 2026 league and share the invite code with family
+          and friends.
+        </p>
 
         {leagues.length > 0 && (
           <div className="mb-8 space-y-3">
@@ -81,7 +130,29 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <LeagueSelector onCreated={handleLeagueAction} onJoined={handleLeagueAction} />
+        {isAdmin && (
+          <div className="card p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+              <Plus className="h-5 w-5 text-gold-400" />
+              Create a league
+            </h2>
+            <form onSubmit={handleCreate}>
+              <input
+                className="input mb-4"
+                placeholder="e.g. World Cup 2026"
+                value={newLeagueName}
+                onChange={(e) => setNewLeagueName(e.target.value)}
+                required
+                minLength={2}
+              />
+              <button type="submit" disabled={creating} className="btn-primary w-full">
+                {creating ? "Creating…" : "Create league"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
       </main>
     </div>
   );

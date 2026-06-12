@@ -184,7 +184,7 @@ export default function LeaguePage() {
           </div>
         )}
 
-        <ScoringHelpBox />
+        <ScoringHelpBox defaultOpen />
 
         <div className="space-y-4">
           {matches.length === 0 ? (
