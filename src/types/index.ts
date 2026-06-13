@@ -147,7 +147,7 @@ export const BADGE_LABELS: Record<BadgeType, { title: string; description: strin
     description: "Three exact scores in a row. Absolutely insufferable.",
   },
   chaos_agent: {
-    title: "Football Terrorist",
+    title: "Chaos Merchant",
     emoji: "🎲",
     description: "Bold wrong predictions that still caused group chat chaos",
   },
