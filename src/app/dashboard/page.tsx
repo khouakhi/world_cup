@@ -53,6 +53,12 @@ export default function DashboardPage() {
       return;
     }
 
+    await apiFetch("/api/auth/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+
     const meRes = await apiFetch("/api/auth/me");
     let userEmail: string | undefined;
     if (meRes.ok) {

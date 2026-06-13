@@ -1,4 +1,4 @@
-import { getAdminDb, type admin } from "@/lib/firebase/admin";
+import { getAdminAuth, getAdminDb, type admin } from "@/lib/firebase/admin";
 import type {
   Badge,
   BracketPrediction,
@@ -134,6 +134,23 @@ export async function isLeagueMember(
   return doc.exists;
 }
 
+export async function resolveDisplayName(userId: string): Promise<string> {
+  const profile = await getProfile(userId);
+  if (profile?.display_name) return profile.display_name;
+
+  try {
+    const authUser = await getAdminAuth().getUser(userId);
+    const name =
+      authUser.displayName?.trim() ||
+      authUser.email?.split("@")[0] ||
+      "Player";
+    await upsertProfile(userId, name);
+    return name;
+  } catch {
+    return "Player";
+  }
+}
+
 export async function getLeagueMembers(leagueId: string): Promise<
   { user_id: string; display_name: string }[]
 > {
@@ -145,10 +162,9 @@ export async function getLeagueMembers(leagueId: string): Promise<
   const members: { user_id: string; display_name: string }[] = [];
   for (const doc of snap.docs) {
     const userId = doc.data().user_id as string;
-    const profile = await getProfile(userId);
     members.push({
       user_id: userId,
-      display_name: profile?.display_name ?? "Unknown",
+      display_name: await resolveDisplayName(userId),
     });
   }
   return members;

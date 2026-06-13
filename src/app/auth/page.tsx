@@ -12,7 +12,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-import { isFirebaseSignedIn } from "@/lib/api-client";
+import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -49,8 +49,18 @@ export default function AuthPage() {
       if (isSignUp) {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(cred.user, { displayName });
+        await apiFetch("/api/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ displayName: displayName.trim() }),
+        });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
+        await apiFetch("/api/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
       }
 
       router.replace("/dashboard");
