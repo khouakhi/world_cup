@@ -144,7 +144,7 @@ export const BADGE_LABELS: Record<BadgeType, { title: string; description: strin
   oracle: {
     title: "Mystic Meg",
     emoji: "🔮",
-    description: "Three exact scores in a row — absolutely insufferable",
+    description: "Three exact scores in a row. Absolutely insufferable.",
   },
   chaos_agent: {
     title: "Football Terrorist",
@@ -154,7 +154,7 @@ export const BADGE_LABELS: Record<BadgeType, { title: string; description: strin
   captain_clutch: {
     title: "Proper Order",
     emoji: "⭐",
-    description: "Banker pick landed maximum points — house bet paid off",
+    description: "Banker pick landed maximum points. House bet paid off.",
   },
   group_guru: {
     title: "Group Stage Guru",
@@ -169,7 +169,7 @@ export const BADGE_LABELS: Record<BadgeType, { title: string; description: strin
   exact_score_streak: {
     title: "Scoreline Sniper",
     emoji: "🎯",
-    description: "Five or more exact scores — stats nonce behaviour",
+    description: "Five or more exact scores. Stats nonce behaviour.",
   },
 };
 

@@ -1,10 +1,11 @@
 import type { LeaderboardEntry } from "@/types";
+import { EMPTY_BOTTOM_LEAGUE } from "@/lib/copy/banter";
 
 interface LeagueBanterPanelProps {
   entries: LeaderboardEntry[];
 }
 
-/** Fun call-outs from data we already have — no scoring changes. */
+/** Fun call-outs from data we already have. No scoring changes. */
 export function LeagueBanterPanel({ entries }: LeagueBanterPanelProps) {
   if (entries.length === 0) return null;
 
@@ -24,7 +25,7 @@ export function LeagueBanterPanel({ entries }: LeagueBanterPanelProps) {
       {entries.length > 2 && last.rank === entries.length && (
         <p className="text-white/70">
           🪵 <strong className="text-white/90">Wooden Spoon FC:</strong>{" "}
-          {last.display_name} — {EMPTY_BOTTOM_LEAGUE}
+          {last.display_name}. {EMPTY_BOTTOM_LEAGUE}
         </p>
       )}
       <p className="text-xs text-white/45 italic">
@@ -34,5 +35,3 @@ export function LeagueBanterPanel({ entries }: LeagueBanterPanelProps) {
     </div>
   );
 }
-
-import { EMPTY_BOTTOM_LEAGUE } from "@/lib/copy/banter";

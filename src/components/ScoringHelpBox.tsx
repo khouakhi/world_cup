@@ -9,13 +9,13 @@ import {
 } from "@/lib/copy/banter";
 
 const EXAMPLE_ROWS = [
-  { prediction: "2-1", points: 5, note: "🔮 Mystic Meg — exact score" },
-  { prediction: "3-2", points: 2, note: "👌 Decent Shout — right winner + goal difference" },
-  { prediction: "3-0", points: 1, note: "🍺 Jammy Git — right result only" },
-  { prediction: "1-1", points: 0, note: "🤡 Knows Nothing — wrong result" },
+  { prediction: "2-1", points: 5, note: "🔮 Mystic Meg. Exact score." },
+  { prediction: "3-2", points: 2, note: "👌 Decent Shout. Right winner + goal difference." },
+  { prediction: "3-0", points: 1, note: "🍺 Jammy Git. Right result only." },
+  { prediction: "1-1", points: 0, note: "🤡 Knows Nothing. Wrong result." },
 ] as const;
 
-/** Pub-quiz scoring explainer — points match src/lib/scoring.ts exactly. */
+/** Pub-quiz scoring explainer. Points match src/lib/scoring.ts exactly. */
 export function ScoringHelpBox({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
 

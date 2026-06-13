@@ -1,4 +1,4 @@
-/** Pub-quiz scoring tiers — points must match src/lib/scoring.ts (5 / 2 / 1 / 0). */
+/** Pub-quiz scoring tiers. Points must match src/lib/scoring.ts (5 / 2 / 1 / 0). */
 export const SCORING_TIERS = [
   { points: 5, label: "🔮 Mystic Meg", prediction: "Exact score" },
   { points: 2, label: "👌 Decent Shout", prediction: "Right winner + goal difference" },
@@ -30,7 +30,7 @@ export const EMPTY_MISSED_DEADLINE =
 export const EMPTY_BOTTOM_LEAGUE = "It's not looking good, chief.";
 
 export const EMPTY_NO_BADGES =
-  "No honours yet. Keep predicting — someone's getting a wooden spoon eventually.";
+  "No honours yet. Keep predicting. Someone's getting a wooden spoon eventually.";
 
 export const BOOKIE_SPECIALS = [
   "Odds of Dave forgetting to do his predictions: 1/4",
@@ -41,6 +41,45 @@ export const BOOKIE_SPECIALS = [
   'Bloke currently top of the league saying "it\'s only luck": 100%.',
   "Today's Special: 4/6 that someone complains the scoring system is unfair after dropping out of the top 3.",
 ] as const;
+
+export interface PrizeTier {
+  title: string;
+  note?: string;
+  items: string[];
+}
+
+export const TOURNAMENT_PRIZES: PrizeTier[] = [
+  {
+    title: "🏆 Winner (Football Oracle)",
+    note: "Pick one or two:",
+    items: [
+      "⚽ One free 6-a-side game. The Monday/Thursday organisers don't charge them their £3.50 for one match.",
+      "🍺 A pint on the house. The Wooden Spoon buys it.",
+      '👑 Gets the "Football Oracle" title until the next tournament.',
+      "🎵 Picks the post-match pub.",
+    ],
+  },
+  {
+    title: "🥈 Runner-up",
+    items: [
+      "🍟 Free chips after football.",
+      'Gets the prestigious title: "Could\'ve Won If VAR Wasn\'t Corrupt."',
+    ],
+  },
+  {
+    title: "🥉 Third place",
+    items: [
+      'Virtual bronze medal and eternal right to say: "I was in the medals, to be fair."',
+    ],
+  },
+  {
+    title: "🪵 Last place (Wooden Spoon FC)",
+    items: [
+      "🍺 Buys the winner a pint after football.",
+      'Has to wear the "Wooden Spoon FC" bib for the first game after the tournament.',
+    ],
+  },
+];
 
 export const END_OF_TOURNAMENT_AWARDS = [
   { position: "1st", award: "🏆 Football Oracle" },

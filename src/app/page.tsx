@@ -15,6 +15,7 @@ import {
 import { BRACKET_POINTS } from "@/types";
 import { BookieSpecialBanner } from "@/components/BookieSpecialBanner";
 import { ScoringHelpBox } from "@/components/ScoringHelpBox";
+import { TournamentPrizes } from "@/components/TournamentPrizes";
 import {
   BRACKET_TAGLINE,
   BRACKET_TITLE,
@@ -129,7 +130,7 @@ export default async function HomePage() {
               step={1}
               icon={<UserPlus className="h-6 w-6 text-gold-400" />}
               title="Lock in your account"
-              text="Email, password, display name. Two minutes max — less time than arguing about VAR."
+              text="Email, password, display name. Two minutes max, less time than arguing about VAR."
             />
             <JoinStep
               step={2}
@@ -154,7 +155,7 @@ export default async function HomePage() {
             <h2 className="mb-3 text-3xl font-bold md:text-4xl">Three competitions</h2>
             <p className="mx-auto max-w-2xl text-white/60">
               Three ways to earn points. Play all three if you want to actually
-              win — or just one if you enjoy the group chat meltdown.
+              win, or just one if you enjoy the group chat meltdown.
             </p>
           </div>
 
@@ -172,7 +173,7 @@ export default async function HomePage() {
               title={`2. ${CAPTAIN_PICK_NAME}`}
               summary={CAPTAIN_PICK_TAGLINE}
               points={[
-                "One banker per matchday — double points on that match",
+                "One banker per matchday. Double points on that match.",
                 "Exact score (5 pts) becomes 10 pts if your house bet lands",
                 "Miss it and expect zero sympathy in the group chat",
                 "Choose before the first match of the day kicks off",
@@ -187,14 +188,21 @@ export default async function HomePage() {
                 `Runner-up: ${BRACKET_POINTS.runnerUp} pts`,
                 `Each semi-finalist: ${BRACKET_POINTS.semiFinalist} pts`,
                 "Submit by Saturday 13 June at midnight (UK time)",
-                "Locks as soon as you save — no take-backs",
+                "Locks as soon as you save. No take-backs.",
               ]}
             />
           </div>
         </div>
       </section>
 
-      {/* How points work — always visible */}
+      {/* Prizes */}
+      <section className="border-t border-white/10 bg-pitch-800 px-4 py-16 md:px-8">
+        <div className="mx-auto max-w-2xl">
+          <TournamentPrizes />
+        </div>
+      </section>
+
+      {/* Pub quiz rules */}
       <section className="border-t border-white/10 bg-pitch-800 px-4 py-16 md:px-8">
         <div className="mx-auto max-w-2xl">
           <h2 className="mb-6 text-center text-3xl font-bold md:text-4xl">
@@ -212,7 +220,7 @@ export default async function HomePage() {
           <p className="mb-8 max-w-lg text-white/65">
             {user
               ? "You're signed in. Get your picks in before someone screenshots the league table."
-              : "Create your account and join the chaos. It's free — unlike your pint at half-time."}
+              : "Create your account and join the chaos. It's free, unlike your pint at half-time."}
           </p>
           <Link href={appHref} className="btn-primary px-10 py-3.5 text-lg">
             {user ? "Get Your Picks In" : "Get Involved"}

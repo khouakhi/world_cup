@@ -157,7 +157,7 @@ export function MatchCard({
               "btn-secondary text-sm",
               isCaptain && "border-gold-400 text-gold-400"
             )}
-            title={`${CAPTAIN_PICK_NAME} — double points`}
+            title={`${CAPTAIN_PICK_NAME} (double points)`}
           >
             <Star className={cn("h-4 w-4", isCaptain && "fill-current")} />
           </button>
