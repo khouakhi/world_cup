@@ -1,31 +1,79 @@
 import { getFootballDataApiToken } from "@/lib/football-data/config";
-import { isFinishedStatus } from "@/lib/utils";
+import { isFinishedStatus, isLiveStatus } from "@/lib/utils";
 import type { Match } from "@/types";
-import { syncLiveResults } from "@/lib/sync/fixtures";
+import { listAllMatches } from "@/lib/db";
+import {
+  scoreUnscoredFinishedMatches,
+  syncLiveResults,
+} from "@/lib/sync/fixtures";
+import {
+  getWorldCupMetadata,
+  saveWorldCupMetadata,
+} from "@/lib/worldcup2026/metadata";
 
 const STALE_AFTER_KICKOFF_MS = 2 * 60 * 60 * 1000;
+const RECENT_MATCH_WINDOW_MS = 8 * 60 * 60 * 1000;
+const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
 
-/** Pull finished scores from football-data.org when a matchday has stale fixtures. */
-export async function ensureRecentResultsSynced(
-  matches: Match[]
-): Promise<void> {
-  if (!getFootballDataApiToken()) return;
+function matchNeedsApiSync(match: Match): boolean {
+  const kickoff = new Date(match.kickoff_at).getTime();
+  const now = Date.now();
 
-  const needsSync = matches.some((match) => {
-    const kickoff = new Date(match.kickoff_at).getTime();
-    const stale =
-      Date.now() > kickoff + STALE_AFTER_KICKOFF_MS && !isFinishedStatus(match.status);
-    const missingScores =
-      isFinishedStatus(match.status) &&
-      (match.home_score === null || match.away_score === null);
-    return stale || missingScores;
-  });
+  if (isLiveStatus(match.status)) return true;
 
-  if (!needsSync) return;
+  const inRecentWindow =
+    now >= kickoff - 30 * 60 * 1000 && now <= kickoff + RECENT_MATCH_WINDOW_MS;
+  const stale =
+    now > kickoff + STALE_AFTER_KICKOFF_MS && !isFinishedStatus(match.status);
+  const missingScores =
+    isFinishedStatus(match.status) &&
+    (match.home_score === null || match.away_score === null);
+
+  return inRecentWindow || stale || missingScores;
+}
+
+/**
+ * Backfill points for finished matches, pull live scores when needed, and
+ * return when results were last synced from the API.
+ */
+export async function syncResultsIfNeeded(
+  matches?: Match[]
+): Promise<string> {
+  const checkedAt = new Date().toISOString();
+  await scoreUnscoredFinishedMatches();
+
+  const meta = await getWorldCupMetadata();
+  const lastApiSync = meta?.results_synced_at
+    ? new Date(meta.results_synced_at).getTime()
+    : 0;
+  const cooledDown = Date.now() - lastApiSync >= SYNC_COOLDOWN_MS;
+
+  if (!getFootballDataApiToken()) {
+    return meta?.results_synced_at ?? checkedAt;
+  }
+
+  const matchList = matches ?? (await listAllMatches());
+  const needsApiSync = matchList.some(matchNeedsApiSync);
+
+  if (!needsApiSync || !cooledDown) {
+    return meta?.results_synced_at ?? checkedAt;
+  }
 
   try {
     await syncLiveResults();
+    await scoreUnscoredFinishedMatches();
+    const syncedAt = new Date().toISOString();
+    await saveWorldCupMetadata({ results_synced_at: syncedAt });
+    return syncedAt;
   } catch (error) {
     console.error("Recent result sync failed:", error);
+    return meta?.results_synced_at ?? checkedAt;
   }
+}
+
+/** @deprecated Use syncResultsIfNeeded */
+export async function ensureRecentResultsSynced(
+  matches: Match[]
+): Promise<void> {
+  await syncResultsIfNeeded(matches);
 }

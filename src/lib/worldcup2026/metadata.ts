@@ -8,6 +8,8 @@ export type WorldCupMetadata = {
   fixture_count: number;
   matchdays: string[];
   updated_at: string;
+  /** When live results were last pulled from football-data.org. */
+  results_synced_at?: string;
 };
 
 export async function getWorldCupMetadata(): Promise<WorldCupMetadata | null> {
@@ -19,6 +21,9 @@ export async function getWorldCupMetadata(): Promise<WorldCupMetadata | null> {
     fixture_count: Number(data.fixture_count ?? 0),
     matchdays: Array.isArray(data.matchdays) ? (data.matchdays as string[]) : [],
     updated_at: String(data.updated_at ?? ""),
+    results_synced_at: data.results_synced_at
+      ? String(data.results_synced_at)
+      : undefined,
   };
 }
 

@@ -5,6 +5,7 @@ import {
   aggregateMatchdayLeaderboard,
 } from "@/lib/scoring";
 import { LEGACY_DEMO_MATCH_ID } from "@/lib/constants";
+import { syncResultsIfNeeded } from "@/lib/sync/ensure-results";
 import {
   getLeagueMembers,
   getPredictionsForLeague,
@@ -25,9 +26,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "league_id required" }, { status: 400 });
   }
 
+  const resultsUpdatedAt = await syncResultsIfNeeded();
+
   const members = await getLeagueMembers(leagueId);
   if (!members.length) {
-    return NextResponse.json({ leaderboard: [], matchday_leaderboard: [] });
+    return NextResponse.json({
+      leaderboard: [],
+      matchday_leaderboard: [],
+      results_updated_at: resultsUpdatedAt,
+    });
   }
 
   const predictions = (await getPredictionsForLeague(leagueId)).filter(
@@ -57,5 +64,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     leaderboard,
     matchday_leaderboard: matchdayLeaderboard,
+    results_updated_at: resultsUpdatedAt,
   });
 }

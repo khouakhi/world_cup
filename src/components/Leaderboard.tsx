@@ -5,6 +5,7 @@ import {
   LEAGUE_TABLE_FOOTER,
   rankBanter,
 } from "@/lib/copy/banter";
+import { formatUpdatedAt } from "@/lib/utils";
 
 interface PodiumProps {
   entries: LeaderboardEntry[];
@@ -80,9 +81,10 @@ function PodiumPlace({
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[];
   highlightUserId?: string;
+  resultsUpdatedAt?: string | null;
 }
 
-export function LeaderboardTable({ entries, highlightUserId }: LeaderboardTableProps) {
+export function LeaderboardTable({ entries, highlightUserId, resultsUpdatedAt }: LeaderboardTableProps) {
   const total = entries.length;
 
   return (
@@ -127,6 +129,11 @@ export function LeaderboardTable({ entries, highlightUserId }: LeaderboardTableP
           </tbody>
         </table>
       </div>
+      {resultsUpdatedAt && (
+        <p className="text-center text-xs text-white/45">
+          Scores synced {formatUpdatedAt(resultsUpdatedAt)}
+        </p>
+      )}
       <p className="text-center text-xs text-white/40">{LEAGUE_TABLE_FOOTER}</p>
     </div>
   );

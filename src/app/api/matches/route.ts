@@ -7,7 +7,7 @@ import {
   pickDefaultMatchday,
 } from "@/lib/worldcup2026/metadata";
 import { listMatches, getMatchPreviews } from "@/lib/db";
-import { ensureRecentResultsSynced } from "@/lib/sync/ensure-results";
+import { syncResultsIfNeeded } from "@/lib/sync/ensure-results";
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     status: statusFilter,
   });
 
-  await ensureRecentResultsSynced(matches);
+  const resultsUpdatedAt = await syncResultsIfNeeded(matches);
 
   matches = await listMatches({
     matchday: effectiveMatchday,
@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
     })),
     matchdays,
     selected_matchday: effectiveMatchday ?? null,
+    results_updated_at: resultsUpdatedAt,
   });
 }
 

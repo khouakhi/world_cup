@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { syncLiveResults } from "@/lib/sync/fixtures";
+import { syncLiveResults, scoreUnscoredFinishedMatches } from "@/lib/sync/fixtures";
+import { saveWorldCupMetadata } from "@/lib/worldcup2026/metadata";
 
 function verifyCronSecret(request: NextRequest): boolean {
   const authHeader = request.headers.get("authorization");
@@ -15,7 +16,10 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await syncLiveResults();
-    return NextResponse.json({ ok: true, ...result });
+    await scoreUnscoredFinishedMatches();
+    const syncedAt = new Date().toISOString();
+    await saveWorldCupMetadata({ results_synced_at: syncedAt });
+    return NextResponse.json({ ok: true, results_synced_at: syncedAt, ...result });
   } catch (error) {
     console.error("Live sync failed:", error);
     return NextResponse.json(

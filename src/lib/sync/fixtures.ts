@@ -174,12 +174,16 @@ async function writeFootballDataToMatch(
   });
 
   if (
-    !wasFinished &&
     nowFinished &&
     fixture.home_score !== null &&
     fixture.away_score !== null
   ) {
-    await scoreMatchPredictions(existing.id, fixture.home_score, fixture.away_score);
+    await scoreMatchPredictions(
+      existing.id,
+      fixture.home_score,
+      fixture.away_score,
+      { onlyUnscored: wasFinished }
+    );
 
     const round = existing.round?.toLowerCase() ?? fixture.round?.toLowerCase() ?? "";
     if (round.includes("final") && !round.includes("semi") && !round.includes("3rd")) {
@@ -248,10 +252,34 @@ async function findMatchingSeededMatch(
   return findMatchByTeams(homeId, awayId);
 }
 
+export async function scoreUnscoredFinishedMatches(): Promise<number> {
+  const matches = await listAllMatches();
+  let scoredMatches = 0;
+
+  for (const match of matches) {
+    if (!isFinishedStatus(match.status)) continue;
+    if (match.home_score === null || match.away_score === null) continue;
+
+    const predictions = await getPredictionsForMatch(match.id);
+    const needsScoring = predictions.some(
+      (pred) => pred.points_awarded === null && !pred.scoring_excluded
+    );
+    if (!needsScoring) continue;
+
+    await scoreMatchPredictions(match.id, match.home_score, match.away_score, {
+      onlyUnscored: true,
+    });
+    scoredMatches += 1;
+  }
+
+  return scoredMatches;
+}
+
 export async function scoreMatchPredictions(
   matchId: string,
   homeScore: number,
-  awayScore: number
+  awayScore: number,
+  options?: { onlyUnscored?: boolean }
 ): Promise<void> {
   const predictions = await getPredictionsForMatch(matchId);
   if (!predictions.length) return;
@@ -265,7 +293,12 @@ export async function scoreMatchPredictions(
     captainPicks.map((pick) => [`${pick.league_id}_${pick.user_id}`, pick.match_id])
   );
 
+  let scoredAny = false;
+
   for (const pred of predictions) {
+    if (pred.scoring_excluded) continue;
+    if (options?.onlyUnscored && pred.points_awarded !== null) continue;
+
     const isCaptain =
       captainByUserLeague.get(`${pred.league_id}_${pred.user_id}`) === matchId;
 
@@ -278,7 +311,10 @@ export async function scoreMatchPredictions(
     );
 
     await updatePredictionPoints(pred.id, breakdown.totalPoints);
+    scoredAny = true;
   }
+
+  if (!scoredAny) return;
 
   const leagueIds = [...new Set(predictions.map((p) => p.league_id))];
   for (const leagueId of leagueIds) {

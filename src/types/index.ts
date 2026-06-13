@@ -81,6 +81,8 @@ export interface Prediction {
   home_score: number;
   away_score: number;
   points_awarded: number | null;
+  /** When true, auto-scoring skips this pick (e.g. pre-league test bets). */
+  scoring_excluded?: boolean;
   submitted_at: string;
   match?: Match;
 }
@@ -159,7 +161,7 @@ export const BADGE_LABELS: Record<BadgeType, { title: string; description: strin
   group_guru: {
     title: "Group Stage Guru",
     emoji: "📊",
-    description: "Top of the table during the group stage",
+    description: "Top of the table when the group stage finishes",
   },
   knockout_king: {
     title: "Knockout King",

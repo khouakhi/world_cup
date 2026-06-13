@@ -1,4 +1,5 @@
 import type { BadgeType } from "@/types";
+import { isFinishedStatus } from "@/lib/utils";
 
 interface PredictionForBadges {
   user_id: string;
@@ -10,6 +11,7 @@ interface PredictionForBadges {
 interface MatchForBadges {
   id: string;
   stage: string | null;
+  status: string;
   kickoff_at: string;
 }
 
@@ -87,14 +89,18 @@ export function evaluateBadges(
   const groupStagePoints = scoreByStage(predictions, matches, "Group");
   const knockoutPoints = scoreByStage(predictions, matches, "Knockout");
 
-  const groupWinner = topScorer(groupStagePoints);
-  if (groupWinner) {
-    earned.push({ user_id: groupWinner, badge_type: "group_guru" });
+  if (isStageComplete(matches, "Group")) {
+    const groupWinner = topScorer(groupStagePoints);
+    if (groupWinner) {
+      earned.push({ user_id: groupWinner, badge_type: "group_guru" });
+    }
   }
 
-  const knockoutWinner = topScorer(knockoutPoints);
-  if (knockoutWinner) {
-    earned.push({ user_id: knockoutWinner, badge_type: "knockout_king" });
+  if (isStageComplete(matches, "Knockout")) {
+    const knockoutWinner = topScorer(knockoutPoints);
+    if (knockoutWinner) {
+      earned.push({ user_id: knockoutWinner, badge_type: "knockout_king" });
+    }
   }
 
   // Chaos Agent: most predictions with 0 points but at least 10 predictions
@@ -142,14 +148,26 @@ function scoreByStage(
   return totals;
 }
 
+function isStageComplete(
+  matches: MatchForBadges[],
+  stageKeyword: string
+): boolean {
+  const stageMatches = matches.filter((m) =>
+    m.stage?.toLowerCase().includes(stageKeyword.toLowerCase())
+  );
+  return (
+    stageMatches.length > 0 &&
+    stageMatches.every((m) => isFinishedStatus(m.status))
+  );
+}
+
 function topScorer(totals: Map<string, number>): string | null {
-  let winner: string | null = null;
   let max = 0;
-  for (const [userId, points] of totals) {
-    if (points > max) {
-      max = points;
-      winner = userId;
-    }
+  for (const points of totals.values()) {
+    max = Math.max(max, points);
   }
-  return max > 0 ? winner : null;
+  if (max <= 0) return null;
+
+  const leaders = [...totals.entries()].filter(([, points]) => points === max);
+  return leaders.length === 1 ? leaders[0][0] : null;
 }
