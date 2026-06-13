@@ -57,3 +57,15 @@ export function isFinishedStatus(status: string): boolean {
 export function isLiveStatus(status: string): boolean {
   return ["1H", "HT", "2H", "ET", "P", "LIVE"].includes(status);
 }
+
+export function isPastKickoff(kickoffAt: string): boolean {
+  return Date.now() > new Date(kickoffAt).getTime();
+}
+
+/** True when we should show a scoreline instead of "vs". */
+export function hasMatchScoreline(match: {
+  home_score: number | null;
+  away_score: number | null;
+}): boolean {
+  return match.home_score !== null && match.away_score !== null;
+}

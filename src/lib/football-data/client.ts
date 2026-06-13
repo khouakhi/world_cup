@@ -189,3 +189,13 @@ export async function fetchLiveWorldCupMatches(): Promise<NormalisedFootballData
   );
   return data.matches.map(normaliseMatch);
 }
+
+/** Live plus recently finished matches — used to refresh scores on the Matches page. */
+export async function fetchLiveAndFinishedWorldCupMatches(): Promise<
+  NormalisedFootballDataMatch[]
+> {
+  const data = await apiFetch<FootballDataMatchList>(
+    `/competitions/${FOOTBALL_DATA_WC_CODE}/matches?season=${FOOTBALL_DATA_WC_SEASON}&status=LIVE,IN_PLAY,PAUSED,FINISHED`
+  );
+  return data.matches.map(normaliseMatch);
+}

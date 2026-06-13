@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Star, Lock } from "lucide-react";
 import type { Match, Prediction } from "@/types";
-import { cn, formatKickoff, isMatchOpen, isLiveStatus, isFinishedStatus } from "@/lib/utils";
+import { cn, formatKickoff, isMatchOpen, isLiveStatus, isFinishedStatus, hasMatchScoreline, isPastKickoff } from "@/lib/utils";
 import {
   CAPTAIN_PICK_NAME,
   EMPTY_MISSED_DEADLINE,
@@ -43,6 +43,8 @@ export function MatchCard({
   const open = isMatchOpen(match.kickoff_at, match.is_locked);
   const live = isLiveStatus(match.status);
   const finished = isFinishedStatus(match.status);
+  const showScoreline = hasMatchScoreline(match);
+  const pastKickoff = isPastKickoff(match.kickoff_at);
 
   async function handleSave() {
     setSaving(true);
@@ -74,7 +76,10 @@ export function MatchCard({
               <Star className="h-3 w-3 fill-current" /> Banker
             </span>
           )}
-          {!open && !finished && (
+          {finished && (
+            <span className="badge-pill text-white/70">FT</span>
+          )}
+          {!open && !finished && !live && (
             <span className="badge-pill" title={EMPTY_MISSED_DEADLINE}>
               <Lock className="h-3 w-3" /> Locked
             </span>
@@ -85,7 +90,7 @@ export function MatchCard({
       <div className="flex items-center justify-between gap-2">
         <TeamBlock name={match.home_team_name} logo={match.home_team_logo} />
         <div className="text-center">
-          {finished || live ? (
+          {showScoreline ? (
             <div className="text-2xl font-bold">
               {match.home_score} – {match.away_score}
             </div>
@@ -107,6 +112,8 @@ export function MatchCard({
                 }}
               />
             </div>
+          ) : pastKickoff ? (
+            <div className="text-sm text-white/45">Result pending</div>
           ) : (
             <div className="text-lg text-white/60">vs</div>
           )}
@@ -123,7 +130,7 @@ export function MatchCard({
         </p>
       )}
 
-      {prediction && finished && prediction.points_awarded !== null && (
+      {prediction && (finished || showScoreline) && prediction.points_awarded !== null && (
         <div className="mt-3 text-center text-sm">
           Your pick: {prediction.home_score}–{prediction.away_score} ·{" "}
           <span className="font-bold text-gold-400">
@@ -136,7 +143,7 @@ export function MatchCard({
         </div>
       )}
 
-      {!open && !finished && !prediction && (
+      {!open && !showScoreline && pastKickoff && !prediction && (
         <p className="mt-3 text-center text-xs text-red-300/90">{EMPTY_MISSED_DEADLINE}</p>
       )}
 

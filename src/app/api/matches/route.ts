@@ -7,6 +7,7 @@ import {
   pickDefaultMatchday,
 } from "@/lib/worldcup2026/metadata";
 import { listMatches, getMatchPreviews } from "@/lib/db";
+import { ensureRecentResultsSynced } from "@/lib/sync/ensure-results";
 
 export async function GET(request: NextRequest) {
   const user = await getAuthUserFromRequest(request);
@@ -34,7 +35,14 @@ export async function GET(request: NextRequest) {
   const effectiveMatchday =
     matchdayParam ?? pickDefaultMatchday(matchdays) ?? undefined;
 
-  const matches = await listMatches({
+  let matches = await listMatches({
+    matchday: effectiveMatchday,
+    status: statusFilter,
+  });
+
+  await ensureRecentResultsSynced(matches);
+
+  matches = await listMatches({
     matchday: effectiveMatchday,
     status: statusFilter,
   });

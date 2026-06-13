@@ -1,6 +1,6 @@
 import {
   fetchWorldCupMatches,
-  fetchLiveWorldCupMatches,
+  fetchLiveAndFinishedWorldCupMatches,
   type NormalisedFootballDataMatch,
 } from "@/lib/football-data/client";
 import { getFootballDataApiToken } from "@/lib/football-data/config";
@@ -93,9 +93,9 @@ export async function syncLiveResults(): Promise<{ live: number; updated: number
     return { live: 0, updated: 0 };
   }
 
-  let liveFixtures: NormalisedFootballDataMatch[] = [];
+  let fixtures: NormalisedFootballDataMatch[] = [];
   try {
-    liveFixtures = await fetchLiveWorldCupMatches();
+    fixtures = await fetchLiveAndFinishedWorldCupMatches();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message.includes("FOOTBALL_DATA_API_TOKEN")) {
@@ -107,12 +107,12 @@ export async function syncLiveResults(): Promise<{ live: number; updated: number
   const nameIndex = buildTeamNameIndex();
   let updated = 0;
 
-  for (const fixture of liveFixtures) {
+  for (const fixture of fixtures) {
     const result = await applyFootballDataUpdate(fixture, nameIndex);
     if (result === "updated") updated += 1;
   }
 
-  return { live: liveFixtures.length, updated };
+  return { live: fixtures.length, updated };
 }
 
 type ApplyResult = "updated" | "unmatched" | "skipped";
