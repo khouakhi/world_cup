@@ -158,8 +158,8 @@ export default async function HomePage() {
               points={[
                 "Exact score: 5 points",
                 "Correct goal difference: 2 points",
-                "Correct result (win/draw/loss): 1 point",
-                "Submit before kick-off (locks 15 min before)",
+                "Correct result only (win/draw/loss): 1 point",
+                "Best tier only — not stacked. Locks 15 min before kick-off",
               ]}
             />
             <ChallengeCard
