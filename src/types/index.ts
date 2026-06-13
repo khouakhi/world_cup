@@ -142,34 +142,34 @@ export interface MatchdayLeaderboardEntry {
 
 export const BADGE_LABELS: Record<BadgeType, { title: string; description: string; emoji: string }> = {
   oracle: {
-    title: "Oracle",
+    title: "Mystic Meg",
     emoji: "🔮",
-    description: "Three exact scores in a row",
+    description: "Three exact scores in a row — absolutely insufferable",
   },
   chaos_agent: {
-    title: "Chaos Agent",
+    title: "Football Terrorist",
     emoji: "🎲",
-    description: "Most bold wrong predictions that still entertained",
+    description: "Bold wrong predictions that still caused group chat chaos",
   },
   captain_clutch: {
-    title: "Captain Clutch",
+    title: "Proper Order",
     emoji: "⭐",
-    description: "Captain's pick scored maximum points",
+    description: "Banker pick landed maximum points — house bet paid off",
   },
   group_guru: {
     title: "Group Stage Guru",
     emoji: "📊",
-    description: "Top scorer during the group stage",
+    description: "Top of the table during the group stage",
   },
   knockout_king: {
     title: "Knockout King",
     emoji: "👑",
-    description: "Top scorer during the knockout stage",
+    description: "Top scorer when it actually matters",
   },
   exact_score_streak: {
     title: "Scoreline Sniper",
     emoji: "🎯",
-    description: "Five or more exact scores in the tournament",
+    description: "Five or more exact scores — stats nonce behaviour",
   },
 };
 

@@ -6,10 +6,10 @@ import { Calendar, Trophy, Crown, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const LEAGUE_NAV_LINKS = [
-  { suffix: "", label: "Matches", shortLabel: "Matches", icon: Calendar },
-  { suffix: "/leaderboard", label: "Leaderboard", shortLabel: "Table", icon: Trophy },
-  { suffix: "/bracket", label: "Bracket", shortLabel: "Bracket", icon: Crown },
-  { suffix: "/badges", label: "Badges", shortLabel: "Badges", icon: Award },
+  { suffix: "", label: "Get Your Picks In", shortLabel: "Picks", icon: Calendar },
+  { suffix: "/leaderboard", label: "League Table", shortLabel: "Table", icon: Trophy },
+  { suffix: "/bracket", label: "Knockout Guess", shortLabel: "Bracket", icon: Crown },
+  { suffix: "/badges", label: "Honours", shortLabel: "Honours", icon: Award },
 ] as const;
 
 function leagueHref(leagueId: string, suffix: string) {

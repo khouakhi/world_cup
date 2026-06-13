@@ -6,6 +6,11 @@ import { Nav } from "@/components/Nav";
 import { TeamPicker, type TeamOption } from "@/components/TeamPicker";
 import type { League, BracketPrediction } from "@/types";
 import { BRACKET_POINTS } from "@/types";
+import {
+  BRACKET_TAGLINE,
+  BRACKET_TITLE,
+  EMPTY_MISSED_DEADLINE,
+} from "@/lib/copy/banter";
 import { Clock, Crown, Lock } from "lucide-react";
 import {
   formatBracketDeadlineCountdown,
@@ -152,12 +157,13 @@ export default function BracketPage() {
       <main className="mx-auto max-w-2xl px-4 py-6">
         <h1 className="mb-2 flex items-center gap-2 text-2xl font-bold">
           <Crown className="h-6 w-6 text-gold-400" />
-          Bracket Challenge
+          {BRACKET_TITLE}
         </h1>
-        <p className="mb-4 text-sm text-white/60">
-          Champion {BRACKET_POINTS.champion} pts · Runner-up {BRACKET_POINTS.runnerUp}{" "}
-          pts · Semi-finalists {BRACKET_POINTS.semiFinalist} pts each. Your picks lock as
-          soon as you save — choose carefully.
+        <p className="mb-4 text-sm text-white/60">{BRACKET_TAGLINE}</p>
+        <p className="mb-4 text-sm text-white/50">
+          Lifts the trophy {BRACKET_POINTS.champion} pts · Runner-up{" "}
+          {BRACKET_POINTS.runnerUp} pts · Semi-finalists {BRACKET_POINTS.semiFinalist}{" "}
+          pts each. Locks as soon as you save.
         </p>
 
         <div className="card mb-6 flex items-start gap-3 p-4 text-sm">
@@ -186,7 +192,7 @@ export default function BracketPage() {
           <div className="card mb-6 flex items-center gap-3 p-4 text-sm text-red-400">
             <Lock className="h-5 w-5 shrink-0" />
             <span>
-              The deadline has passed and you did not submit a bracket in time.
+              {EMPTY_MISSED_DEADLINE}
             </span>
           </div>
         )}
@@ -200,7 +206,7 @@ export default function BracketPage() {
 
         <form onSubmit={handleSave} className="space-y-6">
           <TeamPicker
-            label="🏆 Champion"
+            label="🏆 Lifts the Trophy"
             teams={teams}
             selectedId={bracket.champion_team_id}
             onSelect={(t) => selectTeam("champion", t)}
@@ -242,7 +248,7 @@ export default function BracketPage() {
               disabled={saving || teamsLoading || teams.length === 0}
               className="btn-primary w-full"
             >
-              {saving ? "Saving…" : "Save and lock bracket"}
+              {saving ? "Saving…" : "Lock In Your Knockout Guess"}
             </button>
           )}
 

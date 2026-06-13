@@ -1,4 +1,5 @@
 import { BADGE_LABELS, type Badge } from "@/types";
+import { EMPTY_NO_BADGES } from "@/lib/copy/banter";
 
 interface BadgeGridProps {
   badges: Badge[];
@@ -9,7 +10,7 @@ export function BadgeGrid({ badges, memberNames }: BadgeGridProps) {
   if (!badges.length) {
     return (
       <div className="card p-8 text-center text-white/60">
-        No badges earned yet. Keep predicting!
+        {EMPTY_NO_BADGES}
       </div>
     );
   }

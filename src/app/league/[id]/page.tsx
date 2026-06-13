@@ -8,6 +8,7 @@ import { formatMatchday } from "@/lib/utils";
 import type { Match, Prediction, League } from "@/types";
 import { ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 import { ScoringHelpBox } from "@/components/ScoringHelpBox";
+import { BookieSpecialBanner } from "@/components/BookieSpecialBanner";
 import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 
 type MatchWithPreview = Match & {
@@ -158,6 +159,8 @@ export default function LeaguePage() {
             </button>
           </div>
         )}
+
+        <BookieSpecialBanner />
 
         <ScoringHelpBox defaultOpen />
 

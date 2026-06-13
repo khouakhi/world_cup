@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { BadgeGrid } from "@/components/BadgeGrid";
 import { BADGE_LABELS, type Badge, type League } from "@/types";
+import { EMPTY_NO_BADGES } from "@/lib/copy/banter";
 import { apiFetch, isFirebaseSignedIn } from "@/lib/api-client";
 
 export default function BadgesPage() {
@@ -46,9 +47,9 @@ export default function BadgesPage() {
     <div className="min-h-screen">
       <Nav leagueName={league?.name} leagueId={leagueId} />
       <main className="mx-auto max-w-2xl px-4 py-6">
-        <h1 className="mb-2 text-2xl font-bold">Badges</h1>
+        <h1 className="mb-2 text-2xl font-bold">Honours Board</h1>
         <p className="mb-6 text-sm text-white/60">
-          Earned automatically as the tournament unfolds
+          Earned automatically. Screenshot-worthy when you finally get one.
         </p>
 
         <BadgeGrid badges={badges} memberNames={memberNames} />

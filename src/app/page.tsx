@@ -13,7 +13,16 @@ import {
   Users,
 } from "lucide-react";
 import { BRACKET_POINTS } from "@/types";
+import { BookieSpecialBanner } from "@/components/BookieSpecialBanner";
 import { ScoringHelpBox } from "@/components/ScoringHelpBox";
+import {
+  BRACKET_TAGLINE,
+  BRACKET_TITLE,
+  CAPTAIN_PICK_NAME,
+  CAPTAIN_PICK_TAGLINE,
+  SCORING_LOCK_LINE,
+  SCORING_TIERS,
+} from "@/lib/copy/banter";
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1920&q=80";
@@ -22,8 +31,8 @@ export default async function HomePage() {
   const user = await getAuthUserFromRequest();
   const appHref = user ? "/dashboard" : "/auth";
   const headerLabel = user ? "My league" : "Sign in";
-  const primaryCta = user ? "Go to my league" : "Join the league";
-  const secondaryCta = user ? "View matches" : "I have an account";
+  const primaryCta = user ? "Get Your Picks In" : "Get Involved";
+  const secondaryCta = user ? "Who's Chatting Rubbish?" : "Already in? Sign in";
 
   return (
     <main className="min-h-screen overflow-x-hidden">
@@ -43,6 +52,7 @@ export default async function HomePage() {
         <div className="hero-glow absolute inset-0" />
 
         <div className="relative mx-auto flex min-h-[85vh] max-w-4xl flex-col px-4 pb-16 pt-10 md:px-8">
+          <BookieSpecialBanner />
           <header className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy className="h-7 w-7 text-gold-400" />
@@ -68,16 +78,14 @@ export default async function HomePage() {
             </div>
 
             <h1 className="mb-5 max-w-2xl text-4xl font-extrabold leading-[1.08] tracking-tight md:text-6xl">
-              Predict.
+              Three competitions.
               <br />
-              <span className="text-gold-400">Compete.</span>
-              <br />
-              Win bragging rights.
+              <span className="text-gold-400">Unlimited group chat abuse.</span>
             </h1>
 
             <p className="mb-8 max-w-xl text-lg text-white/75 md:text-xl">
-              A private league for family and football friends. Three challenges,
-              one leaderboard, plenty of banter.
+              Back your football knowledge, stitch up your mates, and settle once
+              and for all who actually knows ball.
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -88,7 +96,7 @@ export default async function HomePage() {
                 {primaryCta}
                 <ChevronRight className="ml-1 h-5 w-5 transition group-hover:translate-x-0.5" />
               </Link>
-              <Link href={appHref} className="btn-secondary px-8 py-3.5 text-lg">
+              <Link href={user ? "/dashboard" : "/auth"} className="btn-secondary px-8 py-3.5 text-lg">
                 {secondaryCta}
               </Link>
             </div>
@@ -120,20 +128,20 @@ export default async function HomePage() {
             <JoinStep
               step={1}
               icon={<UserPlus className="h-6 w-6 text-gold-400" />}
-              title="Create your account"
-              text="Sign up with your email and a password (at least 6 characters). It only takes a minute."
+              title="Lock in your account"
+              text="Email, password, display name. Two minutes max — less time than arguing about VAR."
             />
             <JoinStep
               step={2}
               icon={<KeyRound className="h-6 w-6 text-gold-400" />}
-              title="Enter the invite code"
-              text="After signing in, you will join the World Cup 2026 league automatically. If asked, enter the 6-character invite code shared by the organiser."
+              title="You're in the league"
+              text="Sign in and you're automatically in the family league. No invite code drama."
             />
             <JoinStep
               step={3}
               icon={<Trophy className="h-6 w-6 text-gold-400" />}
-              title="Start predicting"
-              text="Open Matches to predict scores, pick your captain, and fill in your bracket before the deadline."
+              title="Get your picks in"
+              text="Lock in scores, stick your house on one match per day, and have a guess at the knockout bracket."
             />
           </ol>
         </div>
@@ -143,10 +151,10 @@ export default async function HomePage() {
       <section className="relative bg-pitch-900 px-4 py-20 md:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 text-center">
-            <h2 className="mb-3 text-3xl font-bold md:text-4xl">Three challenges</h2>
+            <h2 className="mb-3 text-3xl font-bold md:text-4xl">Three competitions</h2>
             <p className="mx-auto max-w-2xl text-white/60">
-              Three ways to earn points throughout the tournament. Play all three
-              for the best chance to top the table.
+              Three ways to earn points. Play all three if you want to actually
+              win — or just one if you enjoy the group chat meltdown.
             </p>
           </div>
 
@@ -154,35 +162,32 @@ export default async function HomePage() {
             <ChallengeCard
               icon={<Target className="h-6 w-6 text-gold-400" />}
               title="1. Score predictions"
-              summary="Predict the full-time score for every match."
-              points={[
-                "Exact score: 5 points",
-                "Correct goal difference: 2 points",
-                "Correct result only (win/draw/loss): 1 point",
-                "Best tier only — not stacked. Locks 15 min before kick-off",
-              ]}
+              summary="Predict the full-time score for every match. Pub quiz rules apply."
+              points={SCORING_TIERS.map(
+                (t) => `${t.prediction}: ${t.points} pts (${t.label})`
+              ).concat([SCORING_LOCK_LINE])}
             />
             <ChallengeCard
               icon={<Star className="h-6 w-6 text-gold-400" />}
-              title="2. Captain's pick"
-              summary="Double your points on one match each day."
+              title={`2. ${CAPTAIN_PICK_NAME}`}
+              summary={CAPTAIN_PICK_TAGLINE}
               points={[
-                "Pick one match per matchday as your captain",
-                "All points from that match are doubled",
-                "Example: exact score (5 pts) becomes 10 pts",
+                "One banker per matchday — double points on that match",
+                "Exact score (5 pts) becomes 10 pts if your house bet lands",
+                "Miss it and expect zero sympathy in the group chat",
                 "Choose before the first match of the day kicks off",
               ]}
             />
             <ChallengeCard
               icon={<Crown className="h-6 w-6 text-gold-400" />}
-              title="3. Bracket challenge"
-              summary="Predict the tournament winner before it starts."
+              title={`3. ${BRACKET_TITLE}`}
+              summary={BRACKET_TAGLINE}
               points={[
-                `Champion: ${BRACKET_POINTS.champion} points`,
-                `Runner-up: ${BRACKET_POINTS.runnerUp} points`,
-                `Each correct semi-finalist: ${BRACKET_POINTS.semiFinalist} points`,
+                `Lifts the trophy: ${BRACKET_POINTS.champion} pts`,
+                `Runner-up: ${BRACKET_POINTS.runnerUp} pts`,
+                `Each semi-finalist: ${BRACKET_POINTS.semiFinalist} pts`,
                 "Submit by Saturday 13 June at midnight (UK time)",
-                "Locks as soon as you save — no changes after",
+                "Locks as soon as you save — no take-backs",
               ]}
             />
           </div>
@@ -193,7 +198,7 @@ export default async function HomePage() {
       <section className="border-t border-white/10 bg-pitch-800 px-4 py-16 md:px-8">
         <div className="mx-auto max-w-2xl">
           <h2 className="mb-6 text-center text-3xl font-bold md:text-4xl">
-            How points work
+            The pub quiz rules
           </h2>
           <ScoringHelpBox defaultOpen />
         </div>
@@ -203,14 +208,14 @@ export default async function HomePage() {
       <section className="border-t border-white/10 bg-gradient-to-r from-pitch-800 to-pitch-900 px-4 py-16 md:px-8">
         <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
           <Trophy className="mb-4 h-12 w-12 text-gold-400" />
-          <h2 className="mb-3 text-2xl font-bold md:text-3xl">Ready for kick-off?</h2>
+          <h2 className="mb-3 text-2xl font-bold md:text-3xl">Right then. Kick-off.</h2>
           <p className="mb-8 max-w-lg text-white/65">
             {user
-              ? "You are signed in — head straight to your matches and predictions."
-              : "Create your account and join the World Cup 2026 league today."}
+              ? "You're signed in. Get your picks in before someone screenshots the league table."
+              : "Create your account and join the chaos. It's free — unlike your pint at half-time."}
           </p>
           <Link href={appHref} className="btn-primary px-10 py-3.5 text-lg">
-            {user ? "Open my league" : "Get started (it's free)"}
+            {user ? "Get Your Picks In" : "Get Involved"}
           </Link>
         </div>
       </section>

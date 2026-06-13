@@ -5,6 +5,11 @@ import Image from "next/image";
 import { Star, Lock } from "lucide-react";
 import type { Match, Prediction } from "@/types";
 import { cn, formatKickoff, isMatchOpen, isLiveStatus, isFinishedStatus } from "@/lib/utils";
+import {
+  CAPTAIN_PICK_NAME,
+  EMPTY_MISSED_DEADLINE,
+  pointsResultLabel,
+} from "@/lib/copy/banter";
 
 interface MatchCardProps {
   match: Match & { preview?: { preview_text: string; fun_fact: string | null } | null };
@@ -66,11 +71,11 @@ export function MatchCard({
           )}
           {isCaptain && (
             <span className="badge-pill text-gold-400">
-              <Star className="h-3 w-3 fill-current" /> Captain
+              <Star className="h-3 w-3 fill-current" /> Banker
             </span>
           )}
           {!open && !finished && (
-            <span className="badge-pill">
+            <span className="badge-pill" title={EMPTY_MISSED_DEADLINE}>
               <Lock className="h-3 w-3" /> Locked
             </span>
           )}
@@ -124,7 +129,15 @@ export function MatchCard({
           <span className="font-bold text-gold-400">
             +{prediction.points_awarded} pts
           </span>
+          <span className="text-white/50">
+            {" "}
+            · {pointsResultLabel(prediction.points_awarded)}
+          </span>
         </div>
+      )}
+
+      {!open && !finished && !prediction && (
+        <p className="mt-3 text-center text-xs text-red-300/90">{EMPTY_MISSED_DEADLINE}</p>
       )}
 
       {open && (
@@ -135,7 +148,7 @@ export function MatchCard({
             disabled={saving}
             className="btn-primary flex-1 text-sm"
           >
-            {saving ? "Saving…" : prediction ? "Update" : "Save prediction"}
+            {saving ? "Saving…" : prediction ? "Update Pick" : "Lock In Your Pick"}
           </button>
           <button
             type="button"
@@ -144,7 +157,7 @@ export function MatchCard({
               "btn-secondary text-sm",
               isCaptain && "border-gold-400 text-gold-400"
             )}
-            title="Captain's pick (double points)"
+            title={`${CAPTAIN_PICK_NAME} — double points`}
           >
             <Star className={cn("h-4 w-4", isCaptain && "fill-current")} />
           </button>
