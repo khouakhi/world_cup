@@ -26,6 +26,7 @@ export default function LeaguePage() {
   const [selectedDay, setSelectedDay] = useState<string>("");
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [captainMatchId, setCaptainMatchId] = useState<string | null>(null);
+  const [bankerLocked, setBankerLocked] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -60,6 +61,7 @@ export default function LeaguePage() {
       );
       const capData = await capRes.json();
       setCaptainMatchId(capData.captain_pick?.match_id ?? null);
+      setBankerLocked(Boolean(capData.banker_locked));
     }
   }, [leagueId, selectedDay, router]);
 
@@ -93,18 +95,22 @@ export default function LeaguePage() {
     }
   }
 
-  async function handleCaptainPick(matchId: string) {
-    await apiFetch("/api/captain", {
+  async function handleCaptainPick(matchId: string, matchday: string) {
+    const res = await apiFetch("/api/captain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         league_id: leagueId,
-        matchday: selectedDay,
+        matchday,
         match_id: matchId,
       }),
     });
-    setCaptainMatchId(matchId);
+    if (res.ok) {
+      setCaptainMatchId(matchId);
+    }
   }
+
+  const captainMatch = matches.find((m) => m.id === captainMatchId);
 
   async function copyInvite() {
     if (!league) return;
@@ -164,6 +170,21 @@ export default function LeaguePage() {
 
         <ScoringHelpBox defaultOpen />
 
+        {captainMatch && (
+          <p className="mb-4 text-center text-xs text-gold-400/90">
+            Your banker this matchday:{" "}
+            <span className="font-semibold text-gold-400">
+              {captainMatch.home_team_name} vs {captainMatch.away_team_name}
+            </span>
+          </p>
+        )}
+        {bankerLocked && !captainMatchId && (
+          <p className="mb-4 text-center text-xs text-white/45">
+            Banker locked for this matchday (first kick-off has passed the
+            15-minute deadline).
+          </p>
+        )}
+
         <div className="space-y-4">
           {matches.length === 0 ? (
             <div className="card p-8 text-center text-white/60">
@@ -178,8 +199,9 @@ export default function LeaguePage() {
                 leagueId={leagueId}
                 prediction={predictions.find((p) => p.match_id === match.id)}
                 isCaptain={captainMatchId === match.id}
+                bankerLocked={bankerLocked}
                 onPredict={handlePredict}
-                onCaptainPick={handleCaptainPick}
+                onCaptainPick={() => handleCaptainPick(match.id, match.matchday)}
               />
             ))
           )}

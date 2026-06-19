@@ -3,6 +3,7 @@ import {
   FOOTBALL_DATA_WC_SEASON,
   getFootballDataApiToken,
 } from "@/lib/football-data/config";
+import { matchdayFromKickoff } from "@/lib/utils";
 import { PREDICTION_LOCK_MINUTES } from "@/types";
 import type { MatchStatus } from "@/types";
 
@@ -134,11 +135,9 @@ function inferStage(stage: string): string {
   return stage === "GROUP_STAGE" ? "Group Stage" : "Knockout Stage";
 }
 
-/** Matchday key in Europe/London (UK) for grouping fixtures in the app. */
+/** @deprecated Use matchdayFromKickoff from @/lib/utils */
 export function matchdayFromUtc(iso: string): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/London",
-  }).format(new Date(iso));
+  return matchdayFromKickoff(iso);
 }
 
 function normaliseMatch(raw: FootballDataMatch): NormalisedFootballDataMatch {
@@ -156,7 +155,7 @@ function normaliseMatch(raw: FootballDataMatch): NormalisedFootballDataMatch {
 
   return {
     football_data_match_id: raw.id,
-    matchday: matchdayFromUtc(kickoffAt),
+    matchday: matchdayFromKickoff(kickoffAt),
     round: inferRound(raw.stage, raw.group),
     stage: inferStage(raw.stage),
     home_team_name: raw.homeTeam.name ?? "",

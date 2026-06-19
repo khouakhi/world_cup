@@ -5,6 +5,7 @@ import {
 } from "@/lib/football-data/client";
 import { getFootballDataApiToken } from "@/lib/football-data/config";
 import { calculateMatchPoints } from "@/lib/scoring";
+import { bankerMatchdayForMatch } from "@/lib/captain";
 import { isFinishedStatus } from "@/lib/utils";
 import { scoreBracketPredictions } from "@/lib/sync/bracket";
 import { syncBadgesForLeague } from "@/lib/sync/badges";
@@ -285,7 +286,7 @@ export async function scoreMatchPredictions(
   if (!predictions.length) return;
 
   const match = await getMatch(matchId);
-  const matchday = match?.matchday ?? "";
+  const matchday = match ? bankerMatchdayForMatch(match) : "";
   const captainPicks = matchday
     ? await getCaptainPicksForMatchday(matchday)
     : [];

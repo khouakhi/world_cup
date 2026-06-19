@@ -16,6 +16,13 @@ export function generateInviteCode(): string {
 
 const UK_TIMEZONE = "Europe/London";
 
+/** Matchday key in Europe/London for grouping fixtures and banker picks. */
+export function matchdayFromKickoff(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: UK_TIMEZONE,
+  }).format(new Date(iso));
+}
+
 export function formatKickoff(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", {
     timeZone: UK_TIMEZONE,

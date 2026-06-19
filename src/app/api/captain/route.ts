@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthUserFromRequest } from "@/lib/firebase/auth";
+import {
+  bankerMatchdayForMatch,
+  isBankerLockedForMatchday,
+} from "@/lib/captain";
 import { isMatchOpen } from "@/lib/utils";
 import {
   isLeagueMember,
   getMatch,
+  listMatches,
   upsertCaptainPick,
   getCaptainPick,
 } from "@/lib/db";
@@ -28,15 +33,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { league_id, matchday, match_id } = parsed.data;
+  const { league_id, match_id } = parsed.data;
 
   if (!(await isLeagueMember(league_id, user.uid))) {
     return NextResponse.json({ error: "Not a league member" }, { status: 403 });
   }
 
   const match = await getMatch(match_id);
-  if (!match || match.matchday !== matchday) {
-    return NextResponse.json({ error: "Invalid match for this matchday" }, { status: 400 });
+  if (!match) {
+    return NextResponse.json({ error: "Match not found" }, { status: 404 });
+  }
+
+  const matchday = bankerMatchdayForMatch(match);
+
+  const dayMatches = await listMatches({ matchday });
+  if (isBankerLockedForMatchday(dayMatches)) {
+    const existing = await getCaptainPick(league_id, user.uid, matchday);
+    if (!existing || existing.match_id !== match_id) {
+      return NextResponse.json(
+        {
+          error:
+            "Banker is locked for this matchday. Choose one match before the first kick-off locks (15 min rule).",
+        },
+        { status: 403 }
+      );
+    }
   }
 
   if (!isMatchOpen(match.kickoff_at, match.is_locked)) {
@@ -66,6 +87,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "league_id and matchday required" }, { status: 400 });
   }
 
+  const dayMatches = await listMatches({ matchday });
   const captainPick = await getCaptainPick(leagueId, user.uid, matchday);
-  return NextResponse.json({ captain_pick: captainPick });
+
+  return NextResponse.json({
+    captain_pick: captainPick,
+    banker_locked: isBankerLockedForMatchday(dayMatches),
+  });
 }

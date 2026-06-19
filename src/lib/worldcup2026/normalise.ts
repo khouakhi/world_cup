@@ -1,7 +1,8 @@
-import { PREDICTION_LOCK_MINUTES } from "@/types";
-import type { Match, MatchStatus } from "@/types";
+import { matchdayFromKickoff } from "@/lib/utils";
 import { loadWc26Matches, loadWc26Teams } from "@/lib/worldcup2026/data";
 import type { Wc26RawMatch, Wc26Team } from "@/lib/worldcup2026/types";
+import { PREDICTION_LOCK_MINUTES } from "@/types";
+import type { Match, MatchStatus } from "@/types";
 
 const ROUND_LABELS: Record<string, string> = {
   group: "Group Stage",
@@ -70,7 +71,7 @@ export function normaliseWc26Match(
 
   return {
     external_fixture_id: parseInt(raw.id, 10),
-    matchday: kickoffAt.split("T")[0],
+    matchday: matchdayFromKickoff(kickoffAt),
     round: inferRound(raw),
     stage: inferStage(raw),
     home_team_id: homeId,

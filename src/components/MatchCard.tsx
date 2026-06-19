@@ -16,14 +16,16 @@ interface MatchCardProps {
   leagueId: string;
   prediction?: Prediction;
   isCaptain?: boolean;
+  bankerLocked?: boolean;
   onPredict: (matchId: string, home: number, away: number) => Promise<void>;
-  onCaptainPick: (matchId: string) => Promise<void>;
+  onCaptainPick: () => Promise<void>;
 }
 
 export function MatchCard({
   match,
   prediction,
   isCaptain,
+  bankerLocked,
   onPredict,
   onCaptainPick,
 }: MatchCardProps) {
@@ -56,8 +58,11 @@ export function MatchCard({
     }
   }
 
+  const captainDisabled = Boolean(bankerLocked && !isCaptain);
+
   async function handleCaptain() {
-    await onCaptainPick(match.id);
+    if (captainDisabled) return;
+    await onCaptainPick();
   }
 
   return (
@@ -160,11 +165,17 @@ export function MatchCard({
           <button
             type="button"
             onClick={handleCaptain}
+            disabled={captainDisabled}
             className={cn(
               "btn-secondary text-sm",
-              isCaptain && "border-gold-400 text-gold-400"
+              isCaptain && "border-gold-400 text-gold-400",
+              captainDisabled && "cursor-not-allowed opacity-40"
             )}
-            title={`${CAPTAIN_PICK_NAME} (double points)`}
+            title={
+              captainDisabled
+                ? "Banker already locked for this matchday"
+                : `${CAPTAIN_PICK_NAME} (double points, one per matchday)`
+            }
           >
             <Star className={cn("h-4 w-4", isCaptain && "fill-current")} />
           </button>

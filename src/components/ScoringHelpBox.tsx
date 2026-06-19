@@ -91,8 +91,10 @@ export function ScoringHelpBox({ defaultOpen = false }: { defaultOpen?: boolean 
           <p className="flex items-start gap-1.5 text-xs text-white/60">
             <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-gold-400 text-gold-400" />
             <span>
-              <strong className="text-white/75">{CAPTAIN_PICK_NAME}:</strong> one match
-              per matchday, double points. Nail 2-1 as your banker →{" "}
+              <strong className="text-white/75">{CAPTAIN_PICK_NAME}:</strong> one
+              match per matchday, double points. Pick before the first kick-off
+              locks (15 min rule), then it is locked for the day. Nail 2-1 as
+              your banker →{" "}
               <span className="font-semibold text-gold-400">10 pts</span> (5 × 2).
             </span>
           </p>
