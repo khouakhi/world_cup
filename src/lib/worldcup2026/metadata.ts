@@ -10,6 +10,8 @@ export type WorldCupMetadata = {
   updated_at: string;
   /** When live results were last pulled from football-data.org. */
   results_synced_at?: string;
+  /** When finished-match scoring was last checked locally. */
+  scoring_checked_at?: string;
 };
 
 export async function getWorldCupMetadata(): Promise<WorldCupMetadata | null> {
@@ -23,6 +25,9 @@ export async function getWorldCupMetadata(): Promise<WorldCupMetadata | null> {
     updated_at: String(data.updated_at ?? ""),
     results_synced_at: data.results_synced_at
       ? String(data.results_synced_at)
+      : undefined,
+    scoring_checked_at: data.scoring_checked_at
+      ? String(data.scoring_checked_at)
       : undefined,
   };
 }

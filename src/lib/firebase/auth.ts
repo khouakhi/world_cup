@@ -24,7 +24,7 @@ export async function getAuthUserFromRequest(
 
   if (bearerToken) {
     try {
-      const decoded = await getAdminAuth().verifyIdToken(bearerToken, true);
+      const decoded = await getAdminAuth().verifyIdToken(bearerToken);
       return {
         uid: decoded.uid,
         email: decoded.email,

@@ -14,6 +14,7 @@ import {
 const STALE_AFTER_KICKOFF_MS = 2 * 60 * 60 * 1000;
 const RECENT_MATCH_WINDOW_MS = 8 * 60 * 60 * 1000;
 const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
+const SCORING_COOLDOWN_MS = 2 * 60 * 1000;
 
 function matchNeedsApiSync(match: Match): boolean {
   const kickoff = new Date(match.kickoff_at).getTime();
@@ -37,18 +38,28 @@ function matchNeedsApiSync(match: Match): boolean {
  * return when results were last synced from the API.
  */
 export async function syncResultsIfNeeded(
-  matches?: Match[]
+  matches?: Match[],
+  options?: { skipSync?: boolean }
 ): Promise<string> {
   const checkedAt = new Date().toISOString();
-  await scoreUnscoredFinishedMatches();
-
   const meta = await getWorldCupMetadata();
+  const lastScoringRun = meta?.scoring_checked_at
+    ? new Date(meta.scoring_checked_at).getTime()
+    : 0;
+  const scoringCooledDown =
+    Date.now() - lastScoringRun >= SCORING_COOLDOWN_MS;
+
+  if (!options?.skipSync && scoringCooledDown) {
+    await scoreUnscoredFinishedMatches();
+    await saveWorldCupMetadata({ scoring_checked_at: checkedAt });
+  }
+
   const lastApiSync = meta?.results_synced_at
     ? new Date(meta.results_synced_at).getTime()
     : 0;
   const cooledDown = Date.now() - lastApiSync >= SYNC_COOLDOWN_MS;
 
-  if (!getFootballDataApiToken()) {
+  if (options?.skipSync || !getFootballDataApiToken()) {
     return meta?.results_synced_at ?? checkedAt;
   }
 
@@ -63,7 +74,10 @@ export async function syncResultsIfNeeded(
     await syncLiveResults();
     await scoreUnscoredFinishedMatches();
     const syncedAt = new Date().toISOString();
-    await saveWorldCupMetadata({ results_synced_at: syncedAt });
+    await saveWorldCupMetadata({
+      results_synced_at: syncedAt,
+      scoring_checked_at: syncedAt,
+    });
     return syncedAt;
   } catch (error) {
     console.error("Recent result sync failed:", error);

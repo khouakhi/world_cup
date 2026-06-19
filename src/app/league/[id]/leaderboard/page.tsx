@@ -23,8 +23,11 @@ export default function LeaderboardPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [resultsUpdatedAt, setResultsUpdatedAt] = useState<string | null>(null);
 
-  const loadLeaderboard = useCallback(async () => {
-    const lbRes = await apiFetch(`/api/leaderboard?league_id=${leagueId}`);
+  const loadLeaderboard = useCallback(async (sync = true) => {
+    const syncParam = sync ? "" : "&sync=0";
+    const lbRes = await apiFetch(
+      `/api/leaderboard?league_id=${leagueId}${syncParam}`
+    );
     const lbData = await lbRes.json();
     setEntries(lbData.leaderboard ?? []);
     setResultsUpdatedAt(lbData.results_updated_at ?? null);
@@ -37,26 +40,29 @@ export default function LeaderboardPage() {
         return;
       }
 
-      const meRes = await apiFetch("/api/auth/me");
+      const [meRes, leaguesRes] = await Promise.all([
+        apiFetch("/api/auth/me"),
+        apiFetch("/api/leagues"),
+      ]);
+
       if (meRes.ok) {
         const meData = await meRes.json();
         setUserId(meData.user.uid);
       }
 
-      const leaguesRes = await apiFetch("/api/leagues");
       const leaguesData = await leaguesRes.json();
       setLeague(
         leaguesData.leagues?.find((l: League) => l.id === leagueId) ?? null
       );
 
-      await loadLeaderboard();
+      await loadLeaderboard(true);
     }
     load();
   }, [leagueId, router, loadLeaderboard]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      void loadLeaderboard();
+      void loadLeaderboard(false);
     }, REFRESH_MS);
     return () => window.clearInterval(timer);
   }, [loadLeaderboard]);

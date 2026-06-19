@@ -22,7 +22,7 @@ async function attachAuthHeaders(
   headers.set("X-Firebase-Token", token);
 }
 
-/** Authenticated fetch — sends a fresh Firebase ID token on every request. */
+/** Authenticated fetch — reuses cached Firebase token unless the server returns 401. */
 export async function apiFetch(
   input: RequestInfo | URL,
   init?: RequestInit
@@ -30,7 +30,7 @@ export async function apiFetch(
   const headers = new Headers(init?.headers);
 
   try {
-    await attachAuthHeaders(headers, true);
+    await attachAuthHeaders(headers, false);
   } catch {
     // Cookie-only session may still work.
   }

@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "league_id required" }, { status: 400 });
   }
 
-  const resultsUpdatedAt = await syncResultsIfNeeded();
+  const resultsUpdatedAt = await syncResultsIfNeeded(
+    undefined,
+    { skipSync: request.nextUrl.searchParams.get("sync") === "0" }
+  );
 
   const members = await getLeagueMembers(leagueId);
   if (!members.length) {

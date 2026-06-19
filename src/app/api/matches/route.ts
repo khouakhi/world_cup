@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
     status: statusFilter,
   });
 
-  const resultsUpdatedAt = await syncResultsIfNeeded(matches);
+  const skipSync = request.nextUrl.searchParams.get("sync") === "0";
+  const resultsUpdatedAt = await syncResultsIfNeeded(matches, { skipSync });
 
   matches = await listMatches({
     matchday: effectiveMatchday,

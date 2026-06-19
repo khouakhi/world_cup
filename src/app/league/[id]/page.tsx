@@ -35,13 +35,17 @@ export default function LeaguePage() {
       return;
     }
 
-    const leaguesRes = await apiFetch("/api/leagues");
+    const matchQuery = selectedDay ? `?matchday=${selectedDay}` : "";
+    const [leaguesRes, matchesRes, predsRes] = await Promise.all([
+      apiFetch("/api/leagues"),
+      apiFetch(`/api/matches${matchQuery}`),
+      apiFetch(`/api/predictions?league_id=${leagueId}`),
+    ]);
+
     const leaguesData = await leaguesRes.json();
     const current = leaguesData.leagues?.find((l: League) => l.id === leagueId);
     setLeague(current ?? null);
 
-    const matchQuery = selectedDay ? `?matchday=${selectedDay}` : "";
-    const matchesRes = await apiFetch(`/api/matches${matchQuery}`);
     const matchesData = await matchesRes.json();
     setMatches(matchesData.matches ?? []);
     setMatchdays(matchesData.matchdays ?? []);
@@ -51,7 +55,6 @@ export default function LeaguePage() {
       setSelectedDay(matchesData.selected_matchday);
     }
 
-    const predsRes = await apiFetch(`/api/predictions?league_id=${leagueId}`);
     const predsData = await predsRes.json();
     setPredictions(predsData.predictions ?? []);
 
